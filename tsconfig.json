@@ -7,8 +7,6 @@
     },
     "forceConsistentCasingInFileNames": true,
     "verbatimModuleSyntax": true,
-    // blocked by expo-modules-core
-    // "erasableSyntaxOnly": true,
     "downlevelIteration": true,
     "esModuleInterop": true,
     "target": "ES2022",
@@ -27,8 +25,11 @@
     "types": ["node", "react", "vite/client", "bun", "one/env"],
     "lib": ["dom", "esnext"]
   },
-  "include": ["./src", "./scripts", "./app"],
-  "exclude": ["./packages"],
+  "include": ["./src", "./scripts", "./app", "./packages"],
+  "exclude": [
+    "./packages/forum-core/src/crypto/**",
+    "./packages/forum-core/src/**/*.test.ts"
+  ],
   "typeAcquisition": {
     "enable": true
   }

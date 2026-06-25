@@ -12,8 +12,10 @@ export default defineConfig({
     include: [
       'src/test/unit/**/*.test.ts',
       'src/test/unit/**/*.test.tsx',
-      'packages/*/src/**/*.test.ts',
-      'packages/*/src/**/*.test.tsx',
+      'src/features/wallets/siwe.test.ts',
+      'packages/forum-core/src/forumSort.test.ts',
+      'packages/forum-core/src/forumReplies.test.ts',
+      'packages/forum-core/src/forumPermissions.test.ts',
     ],
     outputFile: {
       json: 'src/test/unit/.output/results.json',

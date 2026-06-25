@@ -1,7 +1,7 @@
 import type { ExpoConfig } from 'expo/config'
 
-const appName = 'Takeout'
-const appId = appName.toLowerCase()
+const appName = 'Creaton Forum'
+const appId = 'creaton-forum'
 
 const { APP_VARIANT = 'development' } = process.env
 
@@ -18,11 +18,11 @@ const IS_DEV = APP_VARIANT === 'development'
 const getBundleId = () => {
   // use tamagui bundle ids for production/preview, takeout for dev
   if (APP_VARIANT === 'development') {
-    return 'dev.tamagui.takeout.dev'
+    return 'social.creaton.forum.dev'
   } else if (APP_VARIANT === 'preview') {
-    return 'dev.tamagui.takeout.preview'
+    return 'social.creaton.forum.preview'
   }
-  return 'dev.tamagui.takeout'
+  return 'social.creaton.forum'
 }
 
 const getAppIcon = () => {
@@ -43,8 +43,7 @@ export default {
           return ''
       }
     })()}`,
-    slug: 'takeout',
-    owner: 'takeout',
+    slug: 'creaton-forum',
     scheme: appId,
     version,
     runtimeVersion: version, // must be set to use hot-updater "appVersion" update strategy

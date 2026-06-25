@@ -1,51 +1,52 @@
-import { Redirect, Slot, Stack, usePathname } from 'one'
-import { Configuration } from 'tamagui'
+import type { ReactNode } from 'react'
+import { Redirect, Slot, Stack, usePathname, type Href } from 'one'
+import { isWeb, Spinner, SizableText, YStack } from 'tamagui'
 
-import { useAuth } from '~/features/auth/client/authClient'
-import { DialogProvider } from '~/interface/dialogs/Dialog'
 import { PlatformSpecificRootProvider } from '~/interface/platform/PlatformSpecificRootProvider'
-import { ToastProvider } from '~/interface/toast/Toast'
-import { ProvideZero } from '~/zero/client'
+import { hasStoredAuthSession } from '~/providers/authContext'
+import { useAuth } from '~/providers/UnifiedAuthProvider'
 
-export function AppLayout() {
-  const { state } = useAuth()
+function AuthGate({ children }: { children: ReactNode }) {
+  const { status } = useAuth()
   const pathname = usePathname()
 
-  if (state === 'loading') {
-    return null
+  const isProtected = pathname.startsWith('/home')
+  const isAuthRoute = pathname === '/login' || pathname === '/register'
+
+  if (status === 'loading' && hasStoredAuthSession()) {
+    return (
+      <YStack flex={1} items="center" justify="center" minH="100vh" gap="$3">
+        <Spinner size="large" />
+        <SizableText opacity={0.7}>Restoring your session…</SizableText>
+      </YStack>
+    )
   }
 
-  // redirect logged-out users away from protected routes
-  const isLoggedInRoute = pathname.startsWith('/home')
-  if (state === 'logged-out' && isLoggedInRoute) {
-    return <Redirect href="/auth/login" />
+  const effectiveStatus = status === 'loading' ? 'signedOut' : status
+
+  if (effectiveStatus === 'signedOut' && isProtected) {
+    return <Redirect href={'/login' as Href} />
   }
 
-  // redirect logged-in users away from auth routes
-  const isAuthRoute = pathname.startsWith('/auth')
-  if (state === 'logged-in' && isAuthRoute) {
-    return <Redirect href="/home/feed" />
+  if (effectiveStatus === 'signedIn' && isAuthRoute) {
+    return <Redirect href={'/home/forums' as Href} />
   }
 
+  return children
+}
+
+export function AppLayout() {
   return (
-    <Configuration disableSSR>
-      <ProvideZero>
-        <ToastProvider>
-          <DialogProvider>
-            <PlatformSpecificRootProvider>
-              {process.env.VITE_PLATFORM === 'web' ? (
-                <Slot />
-              ) : (
-                // We need Stack here for transition animation to work on native
-                <Stack screenOptions={{ headerShown: false }}>
-                  <Stack.Screen name="home" />
-                  <Stack.Screen name="auth" />
-                </Stack>
-              )}
-            </PlatformSpecificRootProvider>
-          </DialogProvider>
-        </ToastProvider>
-      </ProvideZero>
-    </Configuration>
+    <PlatformSpecificRootProvider>
+      <AuthGate>
+        {isWeb ? (
+          <Slot />
+        ) : (
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="home" />
+          </Stack>
+        )}
+      </AuthGate>
+    </PlatformSpecificRootProvider>
   )
 }

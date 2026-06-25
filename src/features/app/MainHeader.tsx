@@ -1,9 +1,17 @@
-import { Link, router } from 'one'
+import { Link, router, type Href } from 'one'
 import { memo, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { H3, Separator, Sheet, Spacer, View, XStack, YStack } from 'tamagui'
 
-import { useAuth } from '~/features/auth/client/authClient'
-import { useLogout } from '~/features/auth/useLogout'
+import { useQueryIdentity } from '~/features/profile/profileQueries'
+import {
+  getProfileAvatarUrl,
+  localIdentityForAgent,
+  profileDisplayName,
+  resolveProfilePdsUrl,
+  type ProfileRecord,
+} from '~/features/profile/profileUtils'
+import { useAuth } from '~/providers/UnifiedAuthProvider'
 import { Logo } from '~/interface/app/Logo'
 import { Avatar } from '~/interface/avatars/Avatar'
 import { Button } from '~/interface/buttons/Button'
@@ -15,16 +23,67 @@ import { PageContainer } from '~/interface/layout/PageContainer'
 import { ThemeSwitch } from '~/interface/theme/ThemeSwitch'
 
 import { NavigationTabs } from './NavigationTabs'
+import { ClientSheet } from '~/features/forums/ui/ClientSheet'
+
+function useCachedOwnProfile(agent: ReturnType<typeof useAuth>['agent']) {
+  const queryClient = useQueryClient()
+  const did = agent?.did
+  if (!did) return null
+
+  return (
+    queryClient.getQueryData<ProfileRecord | null>([
+      'profile',
+      did,
+      import.meta.env.DEV ? agent?.did : undefined,
+      'edit',
+    ]) ??
+    queryClient.getQueryData<ProfileRecord | null>([
+      'profile',
+      did,
+      import.meta.env.DEV ? agent?.did : undefined,
+      'display',
+    ])
+  )
+}
+
+function useOwnProfileSummary(agent: ReturnType<typeof useAuth>['agent']) {
+  const identity = useQueryIdentity(agent?.did, agent)
+  const cachedProfile = useCachedOwnProfile(agent)
+  const localIdentity = localIdentityForAgent(agent)
+  const did = agent?.did
+  const pdsUrl = resolveProfilePdsUrl({
+    identityPds: identity.data?.pds ?? localIdentity?.pds,
+    agent,
+    did,
+  })
+  const profile = cachedProfile?.value
+  const avatarUrl = getProfileAvatarUrl({
+    did,
+    blob: profile?.avatar,
+    pdsUrl,
+  })
+  const displayName = did
+    ? profileDisplayName({
+        profile,
+        identity: identity.data ?? localIdentity,
+        did,
+      })
+    : 'User'
+
+  return { avatarUrl, displayName }
+}
 
 export const MainHeader = () => {
-  const { user } = useAuth()
+  const { agent, status } = useAuth()
+  const { avatarUrl, displayName } = useOwnProfileSummary(agent)
+
   return (
     <ScrollHeader>
       <PageContainer>
         <YStack width="100%" py="$2.5">
           <XStack position="relative" width="100%" px="$2" items="center">
             <XStack gap="$2" items="center">
-              <Link href="/" aria-label="Home">
+              <Link href={'/home/forums' as Href} aria-label="Home">
                 <Logo height={20} />
               </Link>
             </XStack>
@@ -44,16 +103,16 @@ export const MainHeader = () => {
             </XStack>
 
             <XStack gap="$2.5" items="center" display="none" $md={{ display: 'flex' }}>
-              {user && (
+              {status === 'signedIn' && agent ? (
                 <Button circular cursor="pointer">
                   <Avatar
                     disableBorder
                     size={28}
-                    image={user.image}
-                    name={user.name ?? 'User'}
+                    image={avatarUrl}
+                    name={displayName}
                   />
                 </Button>
-              )}
+              ) : null}
 
               <ThemeSwitch />
               <Button
@@ -73,14 +132,15 @@ export const MainHeader = () => {
 }
 
 export const MainHeaderMenu = memo(() => {
-  const { user } = useAuth()
+  const { agent, status, logout } = useAuth()
+  const { avatarUrl, displayName } = useOwnProfileSummary(agent)
   const [open, setOpen] = useState(false)
-  const { logout } = useLogout()
 
   const handleLogout = () => {
     void logout()
     setOpen(false)
   }
+
   return (
     <>
       <Button
@@ -91,6 +151,7 @@ export const MainHeaderMenu = memo(() => {
         onPress={() => setOpen(true)}
         $md={{ display: 'none' }}
       />
+      <ClientSheet>
       <Sheet
         open={open}
         onOpenChange={setOpen}
@@ -134,34 +195,37 @@ export const MainHeaderMenu = memo(() => {
                 <H3 size="$3">Settings</H3>
               </XStack>
 
-              <XStack
-                p="$3"
-                rounded="$4"
-                gap="$3"
-                items="center"
-                hoverStyle={{ bg: '$color3' }}
-                pressStyle={{ bg: '$color4' }}
-                cursor="pointer"
-                onPress={handleLogout}
-              >
-                <DoorIcon />
-                <H3 size="$3">Logout</H3>
-              </XStack>
+              {status === 'signedIn' ? (
+                <XStack
+                  p="$3"
+                  rounded="$4"
+                  gap="$3"
+                  items="center"
+                  hoverStyle={{ bg: '$color3' }}
+                  pressStyle={{ bg: '$color4' }}
+                  cursor="pointer"
+                  onPress={handleLogout}
+                >
+                  <DoorIcon />
+                  <H3 size="$3">Logout</H3>
+                </XStack>
+              ) : null}
             </YStack>
 
-            {user && (
+            {status === 'signedIn' && agent ? (
               <XStack p="$4" pt="$2" gap="$3" items="center">
-                <Avatar size={40} image={user.image} name={user.name ?? 'User'} />
+                <Avatar size={40} image={avatarUrl} name={displayName} />
                 <YStack flex={1}>
                   <H3 size="$3" fontWeight="600">
-                    {user.name || user.email}
+                    {displayName}
                   </H3>
                 </YStack>
               </XStack>
-            )}
+            ) : null}
           </YStack>
         </Sheet.Frame>
       </Sheet>
+      </ClientSheet>
     </>
   )
 })

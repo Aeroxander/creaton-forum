@@ -1,185 +1,79 @@
-# Takeout Free
+# Creaton Forum
 
-> **[Takeout Pro](https://tamagui.dev/takeout)** - The full version with more features, templates, and support.
+Cross-platform ATProto forum client built with [One](https://onestack.dev) and [Tamagui](https://tamagui.dev). Forum data lives on user PDS repos and is discovered via Microcosm (Constellation + Slingshot).
 
-> **⚠️ v2-beta** - This stack is in active development. APIs may change.
-
-A full-stack, cross-platform starter kit for building modern web and mobile
-applications with React Native.
+Derived from [tamagui/takeout-free](https://github.com/tamagui/takeout-free) with Zero, Better Auth, Drizzle/Postgres, and the todo demo removed.
 
 ## Prerequisites
 
-Before you begin, ensure you have:
+- **Bun** 1.3+
+- **Node.js** 24+ (see `engines` in package.json)
 
-- **Bun** - [Install Bun](https://bun.sh)
-- **Docker** - [Install Docker](https://docs.docker.com/get-docker/) (on macOS,
-  we recommend [OrbStack](https://orbstack.dev) as a faster alternative)
-- **Git** - For version control
+For native builds: Xcode 16+ (iOS) or Android Studio + JDK 17+ (Android).
 
-For mobile development:
-
-- **iOS**: macOS with Xcode 16+
-- **Android**: Android Studio with JDK 17+
-
-## Quick Start
+## Quick start
 
 ```bash
+cd creaton-forum
 bun install
-bun backend      # start docker services (postgres, zero)
-bun dev          # start web dev server at http://localhost:8092
+bun dev
 ```
+
+Web dev server: `http://localhost:8082` by default (see `ONE_SERVER_URL` in `.env.development`; One may pick the next free port).
+
+No Docker or Postgres required for the app shell.
 
 ## Stack
 
-At a high level, the primary technologies used are:
+- **One** — file routes, web + native
+- **Tamagui** — cross-platform UI
+- **TanStack Query** — client cache
+- **@creaton/forum-core** — forum repository, sort, permissions (ported from red-dwarf)
+- **ATProto auth** — OAuth (web) + app password
 
-- [One](https://onestack.dev) - Universal React framework
-- [Zero](https://zero.rocicorp.dev) - Real-time sync
-- [Tamagui](https://tamagui.dev) - Universal UI
-- [Better Auth](https://www.better-auth.com) - Authentication
-- [Drizzle ORM](https://orm.drizzle.team) - Database schema
+## Local forum graph (optional)
 
-## Project Structure
-
-```
-takeout-free/
-├── app/                   # File-based routing (One router)
-│   ├── (app)/             # Authenticated routes
-│   │   ├── auth/          # Login flows
-│   │   └── home/          # Main app tabs
-│   └── api/               # API routes
-├── src/
-│   ├── features/          # Feature modules (auth, todo, theme)
-│   ├── interface/         # Reusable UI components
-│   ├── database/          # Database schema and migrations
-│   ├── data/              # Zero schema, models, and queries
-│   ├── zero/              # Real-time sync configuration
-│   ├── server/            # Server-side code
-│   └── tamagui/           # Theme configuration
-├── scripts/               # CI/CD and helper scripts
-├── docs/                  # Documentation
-└── assets/                # Images, fonts, splash screens
-```
-
-## Common Commands
+To list/create boards against a local PDS graph, run Microcosm from [red-dwarf](../red-dwarf):
 
 ```bash
-# development
-bun dev                      # start web + mobile dev server
-bun ios                      # run iOS simulator
-bun android                  # run Android emulator
-bun backend                  # start docker services
-
-# code quality
-bun check                    # typescript type checking
-bun lint                     # run oxlint
-bun lint:fix                 # auto-fix linting issues
-
-# testing
-bun test:unit                # unit tests
-bun test:integration         # integration tests
-
-# database
-bun migrate                  # build and run migrations
-
-# deployment
-bun ci --dry-run             # run full CI pipeline without deploy
-bun ci                       # full CI/CD with deployment
+cd ../red-dwarf
+npm run dev:microcosm
 ```
 
-## Database
+Defaults in the app: Constellation `http://localhost:6789`, Slingshot `http://localhost:8080`.
 
-### Local Development
-
-PostgreSQL runs in Docker on port 5444:
-
-- Main database: `postgresql://user:password@localhost:5444/postgres`
-- Zero sync databases: `zero_cvr` and `zero_cdb`
-
-### Migrations
-
-Update your schema in:
-
-- `src/database/schema-public.ts` - Public tables (exposed to Zero/client)
-- `src/database/schema-private.ts` - Private tables
-
-Then run:
+## Commands
 
 ```bash
-bun migrate
+bun dev              # web + native dev
+bun ios              # iOS simulator
+bun android          # Android emulator
+bun check            # TypeScript check
+bun lint             # oxlint
+bun test:unit        # vitest (includes forum-core)
+bun validate:lexicons
+bun build            # production web build
 ```
 
-## Environment Configuration
+## Environment
 
-### File Structure
+Copy `.env.example` to `.env.local` for overrides. Key variables:
 
-- `.env.development` - Development defaults (committed)
-- `.env` - Active environment (generated, gitignored)
-- `.env.local` - Personal secrets/overrides (gitignored)
-- `.env.production` - Production config (gitignored)
-- `.env.production.example` - Production template (committed)
+- `ONE_SERVER_URL` — dev server URL (OAuth client metadata)
+- `VITE_CREATON_FORUM_APPVIEW_URL` — optional forum appview
+- `VITE_CREATON_INTROSPECT_URL` — local appview discovery
 
-### Key Variables
+## Project layout
 
-```bash
-# authentication
-BETTER_AUTH_SECRET=<secret>
-BETTER_AUTH_URL=<url>
-
-# server
-ONE_SERVER_URL=<url>
-
-# zero
-ZERO_UPSTREAM_DB=<connection-string>
-ZERO_CVR_DB=<connection-string>
-ZERO_CHANGE_DB=<connection-string>
-
-# storage (S3/R2)
-CLOUDFLARE_R2_ENDPOINT=<endpoint>
-CLOUDFLARE_R2_ACCESS_KEY=<key>
-CLOUDFLARE_R2_SECRET_KEY=<secret>
+```
+creaton-forum/
+├── app/                      # One routes
+├── packages/forum-core/      # ATProto forum logic + lexicons
+├── src/features/forums/      # Tamagui forum UI
+├── src/providers/            # Auth + Query
+└── public/                   # OAuth client metadata
 ```
 
-See `.env.production.example` for complete production configuration.
+## OAuth dev
 
-## Mobile Apps
-
-### iOS
-
-```bash
-bun ios          # run in simulator
-```
-
-Requires macOS, Xcode 16+, and iOS 17.0+ deployment target.
-
-### Android
-
-```bash
-bun android      # run in emulator
-```
-
-Requires Android Studio, JDK 17+, and Android SDK 34+.
-
-## Adding Features
-
-### Data Models
-
-1. Add schema to `src/database/schema-public.ts`
-2. Run `bun migrate`
-3. Add Zero model to `src/data/models/`
-4. Run `bun zero:generate`
-5. Use queries in your components
-
-### UI Components
-
-Reusable components live in `src/interface/`. Use components from there rather
-than importing directly from Tamagui when possible.
-
-### Icons
-
-This project uses [Phosphor Icons](https://phosphoricons.com/). Icons are in
-`src/interface/icons/phosphor/`.
-
-## License
-
-MIT
+Update `public/client-metadata.json` with your tunnel URL when testing OAuth locally (same pattern as red-dwarf).

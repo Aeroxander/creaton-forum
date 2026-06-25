@@ -1,9 +1,10 @@
 import { Slot, Stack } from 'one'
+import { isWeb } from 'tamagui'
 
 export function AppLayout() {
   return (
     <>
-      {process.env.VITE_PLATFORM === 'web' ? (
+      {isWeb ? (
         <Slot />
       ) : (
         // We need Stack here for transition animation to work on native

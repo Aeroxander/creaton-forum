@@ -1,58 +1,32 @@
 import { getURL } from 'one'
 
-// Server URLs configuration
-// Force localhost on client to avoid 0.0.0.0 CORS issues
-const rawServerUrl = process.env.ONE_SERVER_URL || 'http://localhost:8081'
+const rawServerUrl = process.env.ONE_SERVER_URL || 'http://localhost:8092'
 
 export const SERVER_URL = (() => {
-  // For production and staging web, we can infer the server URL from location.
   if (typeof location !== 'undefined') {
     return `${location.protocol}//${location.host}`
   }
 
-  // In dev build this will return the dev server URL where the bundle is being served from.
   let url = getURL()
 
-  // FIXME?: [One] prod ONE_SERVER_URL not working in metro
-  if (
-    url ===
-    'http://one-server.example.com' /* Means that this is not running through dev server but is a release build */
-  ) {
-    // Default to production URL if not set
-    url = process.env.VITE_SERVER || 'https://takeout.tamagui.dev'
+  if (url === 'http://one-server.example.com') {
+    url = process.env.VITE_SERVER || 'https://forum.creaton.social'
   }
   return url
-})()
-
-export const ZERO_SERVER_URL = (() => {
-  // For production and staging web, we can infer the zero server URL from location.
-  if (typeof location !== 'undefined') {
-    if (location.host === 'takeout.tamagui.dev') {
-      return 'https://zero.tamagui.dev'
-    }
-
-    if (location.host === 'staging.takeout.tamagui.dev') {
-      return 'https://zero.staging.tamagui.dev'
-    }
-  }
-
-  // In dev build this will return the dev server URL where the bundle is being served from.
-  let serverUrl = getURL()
-  if (
-    serverUrl ===
-    'http://one-server.example.com' /* Means that this is not running through dev server but is a release build */
-  ) {
-    // Default to production URL if not set
-    const hostname = process.env.VITE_ZERO_HOSTNAME
-    return hostname ? `https://${hostname}` : 'https://zero.tamagui.dev'
-  } else {
-    const hostname = process.env.VITE_ZERO_HOSTNAME
-    return hostname ? `https://${hostname}` : 'http://localhost:4948'
-  }
 })()
 
 export const DEFAULT_HOT_UPDATE_SERVER_URL =
   'https://pckjvzbtdczlpkgujgkb.supabase.co/functions/v1/update-server'
 
 export const API_URL = `${SERVER_URL}/api`
-export const AUTH_URL = `${SERVER_URL}/api/auth`
+
+export const DEFAULT_CONSTELLATION_URL = import.meta.env.DEV
+  ? 'http://localhost:6789'
+  : 'https://constellation.microcosm.blue'
+
+export const DEFAULT_SLINGSHOT_URL = import.meta.env.DEV
+  ? 'http://localhost:8080'
+  : 'https://slingshot.microcosm.blue'
+
+export const DEFAULT_PDS_URL =
+  import.meta.env.VITE_CREATON_PDS_URL || 'http://127.0.0.1:2583'

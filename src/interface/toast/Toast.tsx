@@ -10,6 +10,7 @@ import { useState, type ReactNode } from 'react'
 import { YStack } from 'tamagui'
 
 import { Z_INDICES } from '../constants'
+import { ClientSheet } from '~/features/forums/ui/ClientSheet'
 import { toastEmitter } from './emitter'
 
 // Re-export from helpers for convenience
@@ -20,15 +21,17 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
     <TamaguiToastProvider swipeDirection="horizontal">
       <ToastDisplay />
 
-      <ToastViewport
-        portalToRoot
-        z={Z_INDICES.toast}
-        flexDirection="column-reverse"
-        top={0}
-        left={0}
-        right={0}
-        mx="auto"
-      />
+      <ClientSheet>
+        <ToastViewport
+          portalToRoot
+          z={Z_INDICES.toast}
+          flexDirection="column-reverse"
+          top={0}
+          left={0}
+          right={0}
+          mx="auto"
+        />
+      </ClientSheet>
       {children}
     </TamaguiToastProvider>
   )

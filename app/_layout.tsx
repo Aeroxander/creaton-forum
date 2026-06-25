@@ -2,9 +2,14 @@ import './root.css'
 
 import { Slot, Stack } from 'one'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { YStack } from 'tamagui'
+import { Configuration, isWeb, YStack } from 'tamagui'
 
+import { DialogProvider } from '~/interface/dialogs/Dialog'
 import { PlatformSpecificRootProvider } from '~/interface/platform/PlatformSpecificRootProvider'
+import { ToastProvider } from '~/interface/toast/Toast'
+import { QueryProvider } from '~/providers/QueryProvider'
+import { UnifiedAuthProvider } from '~/providers/UnifiedAuthProvider'
+import { WagmiProvider } from '~/providers/WagmiProvider'
 import { TamaguiRootProvider } from '~/tamagui/TamaguiRootProvider'
 
 export function Layout() {
@@ -27,21 +32,34 @@ export function Layout() {
 
       <body>
         <div style={{ display: 'contents' }} data-testid="app-container">
-          <PlatformSpecificRootProvider>
-            <TamaguiRootProvider>
-              <SafeAreaProvider>
-                {process.env.VITE_PLATFORM === 'web' ? (
-                  <YStack flex={1}>
-                    <Slot />
-                  </YStack>
-                ) : (
-                  <Stack screenOptions={{ headerShown: false }}>
-                    <Stack.Screen name="(app)" />
-                  </Stack>
-                )}
-              </SafeAreaProvider>
-            </TamaguiRootProvider>
-          </PlatformSpecificRootProvider>
+          <Configuration disableSSR>
+            <QueryProvider>
+              <WagmiProvider>
+                <UnifiedAuthProvider>
+                <PlatformSpecificRootProvider>
+                  <TamaguiRootProvider>
+                    <SafeAreaProvider>
+                      <ToastProvider>
+                        <DialogProvider>
+                          {isWeb ? (
+                            <YStack flex={1}>
+                              <Slot />
+                            </YStack>
+                          ) : (
+                            <Stack screenOptions={{ headerShown: false }}>
+                              <Stack.Screen name="(app)" />
+                              <Stack.Screen name="login" />
+                            </Stack>
+                          )}
+                        </DialogProvider>
+                      </ToastProvider>
+                    </SafeAreaProvider>
+                  </TamaguiRootProvider>
+                </PlatformSpecificRootProvider>
+                </UnifiedAuthProvider>
+              </WagmiProvider>
+            </QueryProvider>
+          </Configuration>
         </div>
       </body>
     </html>

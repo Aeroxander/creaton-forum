@@ -9,43 +9,57 @@ declare module 'one' {
       StaticRoutes: 
         | `/`
         | `/(app)`
-        | `/(app)/auth`
-        | `/(app)/auth/login`
-        | `/(app)/auth/login/password`
         | `/(app)/home`
         | `/(app)/home/(tabs)`
-        | `/(app)/home/(tabs)/feed`
-        | `/(app)/home/(tabs)/feed/`
-        | `/(app)/home/feed`
-        | `/(app)/home/feed/`
+        | `/(app)/home/(tabs)/forums`
+        | `/(app)/home/(tabs)/forums/`
+        | `/(app)/home/forums`
+        | `/(app)/home/forums/`
         | `/(app)/home/settings`
         | `/(app)/home/settings/`
         | `/(app)/home/settings/blocked-users`
         | `/(app)/home/settings/edit-profile`
         | `/_sitemap`
-        | `/auth`
-        | `/auth/login`
-        | `/auth/login/password`
         | `/home`
         | `/home/(tabs)`
-        | `/home/(tabs)/feed`
-        | `/home/(tabs)/feed/`
-        | `/home/feed`
-        | `/home/feed/`
+        | `/home/(tabs)/forums`
+        | `/home/(tabs)/forums/`
+        | `/home/forums`
+        | `/home/forums/`
         | `/home/settings`
         | `/home/settings/`
         | `/home/settings/blocked-users`
         | `/home/settings/edit-profile`
+        | `/login`
+        | `/register`
       DynamicRoutes: 
-        | `/(app)/auth/signup/${OneRouter.SingleRoutePart<T>}`
-        | `/auth/signup/${OneRouter.SingleRoutePart<T>}`
+        | `/(app)/home/(tabs)/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}`
+        | `/(app)/home/(tabs)/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}/topic/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}`
+        | `/(app)/home/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}`
+        | `/(app)/home/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}/topic/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}`
+        | `/home/(tabs)/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}`
+        | `/home/(tabs)/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}/topic/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}`
+        | `/home/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}`
+        | `/home/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}/topic/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}`
       DynamicRouteTemplate: 
-        | `/(app)/auth/signup/[method]`
-        | `/auth/signup/[method]`
+        | `/(app)/home/(tabs)/forums/[boardDid]/[boardRkey]`
+        | `/(app)/home/(tabs)/forums/[boardDid]/[boardRkey]/topic/[topicDid]/[topicRkey]`
+        | `/(app)/home/forums/[boardDid]/[boardRkey]`
+        | `/(app)/home/forums/[boardDid]/[boardRkey]/topic/[topicDid]/[topicRkey]`
+        | `/home/(tabs)/forums/[boardDid]/[boardRkey]`
+        | `/home/(tabs)/forums/[boardDid]/[boardRkey]/topic/[topicDid]/[topicRkey]`
+        | `/home/forums/[boardDid]/[boardRkey]`
+        | `/home/forums/[boardDid]/[boardRkey]/topic/[topicDid]/[topicRkey]`
       IsTyped: true
       RouteTypes: {
-        '/(app)/auth/signup/[method]': RouteInfo<{ method: string }>
-        '/auth/signup/[method]': RouteInfo<{ method: string }>
+        '/(app)/home/(tabs)/forums/[boardDid]/[boardRkey]': RouteInfo<{ boardDid: string; boardRkey: string }>
+        '/(app)/home/(tabs)/forums/[boardDid]/[boardRkey]/topic/[topicDid]/[topicRkey]': RouteInfo<{ boardDid: string; boardRkey: string; topicDid: string; topicRkey: string }>
+        '/(app)/home/forums/[boardDid]/[boardRkey]': RouteInfo<{ boardDid: string; boardRkey: string }>
+        '/(app)/home/forums/[boardDid]/[boardRkey]/topic/[topicDid]/[topicRkey]': RouteInfo<{ boardDid: string; boardRkey: string; topicDid: string; topicRkey: string }>
+        '/home/(tabs)/forums/[boardDid]/[boardRkey]': RouteInfo<{ boardDid: string; boardRkey: string }>
+        '/home/(tabs)/forums/[boardDid]/[boardRkey]/topic/[topicDid]/[topicRkey]': RouteInfo<{ boardDid: string; boardRkey: string; topicDid: string; topicRkey: string }>
+        '/home/forums/[boardDid]/[boardRkey]': RouteInfo<{ boardDid: string; boardRkey: string }>
+        '/home/forums/[boardDid]/[boardRkey]/topic/[topicDid]/[topicRkey]': RouteInfo<{ boardDid: string; boardRkey: string; topicDid: string; topicRkey: string }>
       }
     }
   }

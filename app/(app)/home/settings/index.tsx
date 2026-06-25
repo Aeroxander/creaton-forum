@@ -1,9 +1,14 @@
 import { Link, type Href } from 'one'
+import { lazy, Suspense } from 'react'
 import { Linking } from 'react-native'
-import { isWeb, ScrollView, SizableText, View, XStack, YStack } from 'tamagui'
+import { isWeb, SizableText, Spinner, View, XStack, YStack } from 'tamagui'
 
 import { APP_NAME_LOWERCASE, DOMAIN } from '~/constants/app'
-import { useLogout } from '~/features/auth/useLogout'
+import { LinkedWalletsSection } from '~/features/wallets/LinkedWallets'
+import { ProfileSummary } from '~/features/profile/ProfileSummary'
+import { useAuth } from '~/providers/UnifiedAuthProvider'
+import { PageContainer } from '~/interface/layout/PageContainer'
+import { useWagmiReady } from '~/providers/wagmiContext'
 import { CaretRightIcon } from '~/interface/icons/phosphor/CaretRightIcon'
 import { DoorIcon } from '~/interface/icons/phosphor/DoorIcon'
 import { UserIcon } from '~/interface/icons/phosphor/UserIcon'
@@ -11,6 +16,12 @@ import { PageLayout } from '~/interface/pages/PageLayout'
 import { SepHeading } from '~/interface/text/Headings'
 
 import type { IconComponent } from '~/interface/icons/types'
+
+const WalletLinkPanel = lazy(() =>
+  import('~/features/wallets/WalletLinkPanel').then((mod) => ({
+    default: mod.WalletLinkPanel,
+  })),
+)
 
 interface SettingItem {
   id: string
@@ -91,7 +102,9 @@ function SettingRow({ item }: { item: SettingItem }) {
 }
 
 export function ProfileSettingsPage() {
-  const { logout } = useLogout()
+  const { logout, agent, status } = useAuth()
+  const wagmiReady = useWagmiReady()
+  const did = agent?.did
 
   const sections: SettingSection[] = [
     {
@@ -120,12 +133,26 @@ export function ProfileSettingsPage() {
 
   return (
     <PageLayout useImage>
-      <ScrollView
-        flex={1}
-        showsVerticalScrollIndicator={false}
-        contentInsetAdjustmentBehavior="automatic"
-      >
-        <YStack flex={1} flexBasis="auto" pb="$10">
+      <PageContainer>
+        <YStack pb="$10" gap="$2">
+          <ProfileSummary />
+
+          {isWeb && status === 'signedIn' && wagmiReady ? (
+            <YStack mb="$6" ml="$4" mr="$4">
+              <SepHeading>Wallet</SepHeading>
+              <Suspense
+                fallback={
+                  <YStack py="$4" items="center">
+                    <Spinner size="small" />
+                  </YStack>
+                }
+              >
+                <WalletLinkPanel did={did} />
+              </Suspense>
+              <LinkedWalletsSection did={did} />
+            </YStack>
+          ) : null}
+
           {sections.map((section) => (
             <YStack key={section.title} mb="$6" ml="$4">
               <SepHeading>{section.title}</SepHeading>
@@ -139,7 +166,7 @@ export function ProfileSettingsPage() {
 
           <LogoAndVersion />
         </YStack>
-      </ScrollView>
+      </PageContainer>
     </PageLayout>
   )
 }
@@ -158,3 +185,5 @@ function LogoAndVersion() {
     </YStack>
   )
 }
+
+export default ProfileSettingsPage

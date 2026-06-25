@@ -1,0 +1,199 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.board",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A forum board (a container for topics). Owned by its creator; discovered by other clients via the backlink from the global forum directory record.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["title", "scope", "createdAt"],
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 120,
+            "maxGraphemes": 120,
+            "description": "Display name of the board."
+          },
+          "category": {
+            "type": "string",
+            "maxLength": 80,
+            "maxGraphemes": 80,
+            "description": "Optional grouping label used by clients to cluster boards."
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "maxGraphemes": 2000,
+            "description": "Optional board description / blurb."
+          },
+          "slug": {
+            "type": "string",
+            "maxLength": 64,
+            "pattern": "^[a-z0-9-]+$",
+            "description": "URL-safe slug derived from the title."
+          },
+          "directoryUri": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "AT URI of the directory record this board advertises itself to. Enables backlink-based discovery."
+          },
+          "scope": {
+            "type": "string",
+            "knownValues": ["studio", "standalone", "creator"],
+            "description": "Whether this board belongs to a Creaton studio, a creator/supporter community, or stands alone."
+          },
+          "creatorBoard": {
+            "type": "ref",
+            "ref": "app.creaton.forum.board#creatorBoard",
+            "description": "Creator-focused board metadata. Omitted for normal community boards."
+          },
+          "studioUri": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "When scope is 'studio', the project record this board belongs to."
+          },
+          "rules": {
+            "type": "string",
+            "maxLength": 4000,
+            "maxGraphemes": 4000,
+            "description": "Optional board rules text."
+          },
+          "access": {
+            "type": "ref",
+            "ref": "app.creaton.forum.board#accessPolicy",
+            "description": "Omitted for public boards. Protected boards declare their payment, entitlement, and threshold-committee policy here."
+          },
+          "postingMode": {
+            "type": "string",
+            "knownValues": ["public", "mixed", "encrypted"],
+            "description": "Owner-selected posting mode. Missing values are treated as public for compatibility."
+          },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "updatedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    },
+    "creatorBoard": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "knownValues": ["creator"]
+        },
+        "supportLabel": {
+          "type": "string",
+          "maxLength": 80,
+          "maxGraphemes": 80,
+          "description": "Creator-facing membership label shown by clients."
+        },
+        "treasury": {
+          "type": "string",
+          "maxLength": 42,
+          "description": "Creator or board treasury EVM address for direct USDC support."
+        }
+      }
+    },
+    "accessPolicy": {
+      "type": "object",
+      "required": [
+        "kind",
+        "issuerDid",
+        "issuerEndpoint",
+        "paymentProtocol",
+        "chainId",
+        "asset",
+        "amount",
+        "durationSeconds",
+        "payTo",
+        "revenueRouter",
+        "committeeRegistry",
+        "entitlementRegistry",
+        "committeeSize",
+        "committeeThreshold",
+        "historyPolicy",
+        "epochSeconds"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "knownValues": ["protected"]
+        },
+        "issuerDid": {
+          "type": "string",
+          "maxLength": 2048
+        },
+        "issuerEndpoint": {
+          "type": "string",
+          "format": "uri"
+        },
+        "paymentProtocol": {
+          "type": "string",
+          "knownValues": ["mpp", "direct-usdc"],
+          "description": "MPP is used for HTTP/API pay-before-access flows. direct-usdc is used for wallet-initiated creator or board subscriptions."
+        },
+        "chainId": {
+          "type": "integer",
+          "minimum": 2741,
+          "maximum": 11124,
+          "description": "Abstract mainnet (2741) or Abstract testnet (11124)."
+        },
+        "asset": {
+          "type": "string",
+          "maxLength": 42,
+          "description": "Abstract USDC contract address."
+        },
+        "amount": {
+          "type": "string",
+          "maxLength": 78,
+          "description": "Human-readable USDC.e amount used by the Abstract MPP charge method."
+        },
+        "durationSeconds": {
+          "type": "integer",
+          "minimum": 60
+        },
+        "payTo": {
+          "type": "string",
+          "maxLength": 42,
+          "description": "Board owner's account, board treasury, or revenue router recipient."
+        },
+        "revenueRouter": {
+          "type": "string",
+          "maxLength": 42,
+          "description": "Abstract router that allocates 90% to payTo and 10% to the KMS reward vault."
+        },
+        "committeeRegistry": {
+          "type": "string",
+          "maxLength": 42,
+          "description": "Abstract CREATE delegated-PoS committee registry."
+        },
+        "entitlementRegistry": {
+          "type": "string",
+          "maxLength": 42,
+          "description": "Abstract protected-board entitlement registry."
+        },
+        "committeeSize": {
+          "type": "integer",
+          "minimum": 15,
+          "maximum": 15
+        },
+        "committeeThreshold": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 10
+        },
+        "historyPolicy": {
+          "type": "string",
+          "knownValues": ["full", "window", "forward"]
+        },
+        "epochSeconds": {
+          "type": "integer",
+          "minimum": 86400,
+          "maximum": 86400
+        }
+      }
+    }
+  }
+}

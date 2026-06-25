@@ -1,0 +1,41 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.modLog",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Append-only board moderation audit entry. This records history; current effective topic state is still represented by modAction records.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["board", "action", "createdAt"],
+        "properties": {
+          "board": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The board this log entry belongs to. Discovery path: '.board.uri'."
+          },
+          "subject": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "Optional topic, comment, report, role grant, sanction, or review record this entry concerns. Discovery path: '.subject.uri'."
+          },
+          "action": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "related": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 2000,
+            "maxGraphemes": 2000
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

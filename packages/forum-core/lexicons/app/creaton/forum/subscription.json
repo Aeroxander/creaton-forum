@@ -1,0 +1,27 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.subscription",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A user-owned watch/subscription record for a forum board or topic. Uses a deterministic rkey derived from the subject URI and kind.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["subject", "kind", "createdAt"],
+        "properties": {
+          "subject": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The watched board or topic. Discovery path: '.subject.uri'."
+          },
+          "kind": {
+            "type": "string",
+            "knownValues": ["board", "topic"]
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

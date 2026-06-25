@@ -1,0 +1,39 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.sanction",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Board-scoped user restriction written by a board owner or delegated moderator.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["board", "subject", "kind", "createdAt"],
+        "properties": {
+          "board": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The board this sanction applies to. Discovery path: '.board.uri'."
+          },
+          "subject": {
+            "type": "string",
+            "format": "did",
+            "description": "The DID restricted on this board."
+          },
+          "kind": {
+            "type": "string",
+            "knownValues": ["mute", "ban", "postApproval"]
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 2000,
+            "maxGraphemes": 2000
+          },
+          "expiresAt": { "type": "string", "format": "datetime" },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "revokedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

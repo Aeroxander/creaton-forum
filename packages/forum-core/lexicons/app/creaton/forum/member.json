@@ -1,0 +1,28 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.member",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Membership of a user in a forum board. Uses a deterministic rkey derived from the board URI (client convention: hashRkey('member', boardUri)) so membership is one-record-per-user-per-board and re-joining is idempotent.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["board", "createdAt"],
+        "properties": {
+          "board": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The board the member has joined."
+          },
+          "role": {
+            "type": "string",
+            "knownValues": ["member", "moderator", "owner"],
+            "description": "Self-asserted role hint. Note: on atproto this is advisory — authoritative moderation authority should be cross-checked via roleGrant records or the board owner."
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

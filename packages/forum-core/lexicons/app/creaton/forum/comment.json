@@ -1,0 +1,46 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.comment",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A reply within a topic. Nested threading is expressed via the optional 'parent' strongRef pointing at another comment in the same topic.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["topic", "createdAt"],
+        "properties": {
+          "topic": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The topic record this comment belongs to. Discovery path: '.topic.uri'."
+          },
+          "parent": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The comment being replied to, for nested threading. Omitted for top-level replies to the topic."
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 20000,
+            "maxGraphemes": 20000,
+            "description": "Comment body in Creaton forum markdown."
+          },
+          "protectedBody": {
+            "type": "ref",
+            "ref": "app.creaton.forum.encryptedContent",
+            "description": "Encrypted comment body for a protected board. Must not be combined with body."
+          },
+          "protectedAttachments": {
+            "type": "array",
+            "maxLength": 20,
+            "items": { "type": "ref", "ref": "app.creaton.forum.encryptedAttachment" },
+            "description": "Logos-hosted encrypted attachments for a protected reply."
+          },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "updatedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

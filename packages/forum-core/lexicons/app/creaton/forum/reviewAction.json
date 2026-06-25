@@ -1,0 +1,37 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.reviewAction",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Board moderation review action for approving, rejecting, hiding, or restoring author-owned forum content.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["board", "subject", "action", "createdAt"],
+        "properties": {
+          "board": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The board this review action belongs to. Discovery path: '.board.uri'."
+          },
+          "subject": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The topic or comment being reviewed. Discovery path: '.subject.uri'."
+          },
+          "action": {
+            "type": "string",
+            "knownValues": ["approve", "reject", "hide", "restore"]
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 2000,
+            "maxGraphemes": 2000
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.directory",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A global forum directory: a well-known singleton record (rkey 'global') that boards reference via their 'directoryUri' field so clients can discover all boards advertising to it through Constellation backlinks on '.directoryUri'. The canonical instance is at://did:web:creaton.social/app.creaton.forum.directory/global, but any community may publish its own directory record to scope discovery to a sub-network.",
+      "key": "any",
+      "record": {
+        "type": "object",
+        "required": ["name", "createdAt"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 80,
+            "maxGraphemes": 80,
+            "description": "Human-readable name of this directory (e.g. 'Creaton Global Forums')."
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500,
+            "maxGraphemes": 500
+          },
+          "scope": {
+            "type": "string",
+            "knownValues": ["global", "community"],
+            "description": "'global' for the canonical network-wide directory, 'community' for a themed sub-network."
+          },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "updatedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.requestKeyGrant",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Requests encrypted epoch keys for an authenticated protected-board entitlement. The HTTP endpoint may respond with an x402 Payment Required challenge.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["boardUri", "certificate"],
+          "properties": {
+            "boardUri": { "type": "string", "format": "at-uri" },
+            "certificate": { "type": "ref", "ref": "app.creaton.forum.requestKeyGrant#sessionCertificate" }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["grants"],
+          "properties": {
+            "grants": {
+              "type": "array",
+              "maxLength": 15,
+              "items": { "type": "ref", "ref": "app.creaton.forum.requestKeyGrant#grant" }
+            }
+          }
+        }
+      },
+      "errors": [
+        { "name": "AuthenticationRequired" },
+        { "name": "IdentityMismatch" },
+        { "name": "ProtectedBoardNotFound" },
+        { "name": "WrongIssuer" },
+        { "name": "PaymentFailed" },
+        { "name": "InvalidAccessCertificate" }
+      ]
+    },
+    "sessionCertificate": {
+      "type": "object",
+      "required": [
+        "version", "did", "account", "boardUri", "issuer", "publicKey",
+        "sessionKeyHash", "nonce", "issuedAt", "expiresAt", "signature"
+      ],
+      "properties": {
+        "version": { "type": "string", "knownValues": ["1"] },
+        "did": { "type": "string", "format": "did" },
+        "account": { "type": "string", "maxLength": 42 },
+        "boardUri": { "type": "string", "format": "at-uri" },
+        "issuer": { "type": "string", "format": "did" },
+        "publicKey": { "type": "string", "maxLength": 256, "description": "Base64url uncompressed P-256 HPKE public key." },
+        "sessionKeyHash": { "type": "string", "maxLength": 43, "description": "Base64url SHA-256 fingerprint." },
+        "nonce": { "type": "string", "maxLength": 66 },
+        "issuedAt": { "type": "integer", "minimum": 1 },
+        "expiresAt": { "type": "integer", "minimum": 1 },
+        "signature": { "type": "string", "maxLength": 16384 }
+      }
+    },
+    "grant": {
+      "type": "object",
+      "required": [
+        "grantId", "boardUri", "sessionKeyHash", "certificateHash", "epochFrom",
+        "epochTo", "expiresAt", "version", "suite", "enc", "ciphertext",
+        "keyCommitment", "createdAt"
+      ],
+      "properties": {
+        "grantId": { "type": "string", "maxLength": 128 },
+        "boardUri": { "type": "string", "format": "at-uri" },
+        "sessionKeyHash": { "type": "string", "maxLength": 43 },
+        "certificateHash": { "type": "string", "maxLength": 43 },
+        "epochFrom": { "type": "string", "maxLength": 10 },
+        "epochTo": { "type": "string", "maxLength": 10 },
+        "expiresAt": { "type": "string", "format": "datetime" },
+        "version": { "type": "integer", "minimum": 2, "maximum": 2 },
+        "suite": {
+          "type": "string",
+          "knownValues": ["DHKEM-P256-HKDF-SHA256/HKDF-SHA256/AES-256-GCM"]
+        },
+        "enc": { "type": "string", "maxLength": 256 },
+        "ciphertext": { "type": "string", "maxLength": 100000 },
+        "keyCommitment": { "type": "string", "maxLength": 43 },
+        "createdAt": { "type": "string", "format": "datetime" }
+      }
+    }
+  }
+}

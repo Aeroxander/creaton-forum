@@ -1,0 +1,85 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.keyGrant",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "An issuer-authored, recipient-opaque Sarma V2 grant containing encrypted forum epoch keys.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "board",
+          "grantId",
+          "sessionKeyHash",
+          "certificateHash",
+          "epochFrom",
+          "epochTo",
+          "expiresAt",
+          "version",
+          "suite",
+          "enc",
+          "ciphertext",
+          "keyCommitment",
+          "createdAt"
+        ],
+        "properties": {
+          "board": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef"
+          },
+          "grantId": {
+            "type": "string",
+            "maxLength": 128,
+            "description": "Opaque, issuer-generated identifier; it must not encode a DID or wallet address."
+          },
+          "sessionKeyHash": {
+            "type": "bytes",
+            "description": "SHA-256 fingerprint of the temporary HPKE public key."
+          },
+          "certificateHash": {
+            "type": "bytes",
+            "description": "SHA-256 hash of the AGW-signed access-session certificate."
+          },
+          "epochFrom": {
+            "type": "string",
+            "maxLength": 10
+          },
+          "epochTo": {
+            "type": "string",
+            "maxLength": 10
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "datetime"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 2
+          },
+          "suite": {
+            "type": "string",
+            "knownValues": ["DHKEM-P256-HKDF-SHA256/HKDF-SHA256/AES-256-GCM"]
+          },
+          "enc": {
+            "type": "bytes",
+            "description": "RFC 9180 encapsulated key."
+          },
+          "ciphertext": {
+            "type": "bytes",
+            "description": "HPKE ciphertext containing at most 256 daily epoch keys."
+          },
+          "keyCommitment": {
+            "type": "bytes",
+            "description": "SHA-256 commitment to the canonical plaintext epoch-key bundle."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "datetime"
+          }
+        }
+      }
+    }
+  }
+}

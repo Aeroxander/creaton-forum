@@ -1,0 +1,54 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.encryptedContent",
+  "defs": {
+    "main": {
+      "type": "object",
+      "description": "An authenticated Creaton forum body encrypted under a board epoch key.",
+      "required": ["version", "suite", "epoch", "salt", "nonce", "ciphertext"],
+      "properties": {
+        "version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "suite": {
+          "type": "string",
+          "knownValues": ["HKDF-SHA256/AES-256-GCM"]
+        },
+        "epoch": {
+          "type": "string",
+          "maxLength": 10,
+          "description": "UTC key epoch in YYYY-MM-DD form."
+        },
+        "committeeEpoch": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Required for version 2 content; identifies the CREATE-elected threshold committee."
+        },
+        "keyEpochUri": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "Required for version 2 content; points to the public threshold-wrapped board key capsule."
+        },
+        "keyCapsuleUri": {
+          "type": "string",
+          "format": "at-uri",
+          "description": "Required for version 3 content; points to the per-record threshold-DH key capsule."
+        },
+        "salt": {
+          "type": "bytes",
+          "description": "Random 32-byte salt used to derive the per-record content key."
+        },
+        "nonce": {
+          "type": "bytes",
+          "description": "Random 12-byte AES-GCM nonce."
+        },
+        "ciphertext": {
+          "type": "bytes",
+          "description": "AES-256-GCM ciphertext including its authentication tag."
+        }
+      }
+    }
+  }
+}

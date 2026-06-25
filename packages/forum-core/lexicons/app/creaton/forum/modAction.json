@@ -1,0 +1,44 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.modAction",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A moderator action on a forum subject (topic or comment). Written by the acting moderator into their own repo, then verified by checking that the action author is either the board owner or has an unrevoked roleGrant from the board owner. Discoverable via Constellation backlinks on '.subject.uri'. Uses deterministic rkeys per board, subject, and action family so re-acting updates current state without collapsing pin/lock/move into one record.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["board", "subject", "action", "createdAt"],
+        "properties": {
+          "board": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The board the subject belongs to, for scoping the action."
+          },
+          "subject": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The topic or comment being acted on. Discovery path: '.subject.uri'."
+          },
+          "action": {
+            "type": "string",
+            "knownValues": ["pin", "unpin", "lock", "unlock", "move", "merge"],
+            "description": "The moderation action."
+          },
+          "movedTo": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "When action is 'move' or 'merge', the new/canonical topic record this one points to."
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500,
+            "maxGraphemes": 500,
+            "description": "Optional moderator note explaining the action."
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

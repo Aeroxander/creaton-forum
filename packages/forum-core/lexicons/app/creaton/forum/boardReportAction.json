@@ -1,0 +1,37 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.boardReportAction",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A moderator action on a board-scoped report. Written by the acting moderator into their own repo because moderators cannot update the reporter's repo.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["board", "report", "action", "createdAt"],
+        "properties": {
+          "board": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The board this report action belongs to. Discovery path: '.board.uri'."
+          },
+          "report": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The boardReport record being acted on."
+          },
+          "action": {
+            "type": "string",
+            "knownValues": ["resolve", "reopen"]
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 500,
+            "maxGraphemes": 500
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.requestKeyRelease",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Requests private 10-of-15 threshold partial decapsulations for an MPP-backed protected-board entitlement.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": [
+            "boardUri", "epochFrom", "epochTo", "committeeEpoch",
+            "eligibilityBlock", "certificate"
+          ],
+          "properties": {
+            "boardUri": { "type": "string", "format": "at-uri" },
+            "epochFrom": { "type": "string", "maxLength": 10 },
+            "epochTo": { "type": "string", "maxLength": 10 },
+            "committeeEpoch": { "type": "integer", "minimum": 1 },
+            "eligibilityBlock": {
+              "type": "string",
+              "maxLength": 78,
+              "description": "Finalized Abstract block number encoded as a base-10 string."
+            },
+            "certificate": {
+              "type": "ref",
+              "ref": "app.creaton.forum.requestKeyRelease#sessionCertificate"
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["receipt", "shares"],
+          "properties": {
+            "receipt": { "type": "ref", "ref": "app.creaton.forum.requestKeyRelease#accessReceipt" },
+            "shares": {
+              "type": "array",
+              "maxLength": 15,
+              "items": { "type": "ref", "ref": "app.creaton.forum.requestKeyRelease#partialShare" }
+            }
+          }
+        }
+      },
+      "errors": [
+        { "name": "AuthenticationRequired" },
+        { "name": "IdentityMismatch" },
+        { "name": "EntitlementRequired" },
+        { "name": "PaymentFailed" },
+        { "name": "PolicyMismatch" },
+        { "name": "CommitteeUnavailable" },
+        { "name": "InvalidAccessCertificate" }
+      ]
+    },
+    "sessionCertificate": {
+      "type": "object",
+      "required": [
+        "version", "did", "account", "boardUri", "issuer", "publicKey",
+        "sessionKeyHash", "nonce", "issuedAt", "expiresAt", "signature"
+      ],
+      "properties": {
+        "version": { "type": "string", "knownValues": ["1"] },
+        "did": { "type": "string", "format": "did" },
+        "account": { "type": "string", "maxLength": 42 },
+        "boardUri": { "type": "string", "format": "at-uri" },
+        "issuer": { "type": "string", "format": "did" },
+        "publicKey": { "type": "string", "maxLength": 256 },
+        "sessionKeyHash": { "type": "string", "maxLength": 43 },
+        "nonce": { "type": "string", "maxLength": 66 },
+        "issuedAt": { "type": "integer", "minimum": 1 },
+        "expiresAt": { "type": "integer", "minimum": 1 },
+        "signature": { "type": "string", "maxLength": 16384 }
+      }
+    },
+    "accessReceipt": {
+      "type": "object",
+      "required": [
+        "requestId", "requestHash", "boardUri", "subjectHash", "committeeEpoch",
+        "eligibilityBlock", "policyHash", "expiresAt"
+      ],
+      "properties": {
+        "requestId": { "type": "string", "maxLength": 128 },
+        "requestHash": { "type": "string", "maxLength": 128 },
+        "boardUri": { "type": "string", "format": "at-uri" },
+        "subjectHash": { "type": "string", "maxLength": 128 },
+        "committeeEpoch": { "type": "integer", "minimum": 1 },
+        "eligibilityBlock": { "type": "string", "maxLength": 78 },
+        "policyHash": { "type": "string", "maxLength": 128 },
+        "expiresAt": { "type": "string", "format": "datetime" }
+      }
+    },
+    "partialShare": {
+      "type": "object",
+      "required": [
+        "version", "suite", "requestHash", "committeeEpoch", "operatorId",
+        "shareIndex", "recipientKeyHash", "envelope", "shareProof", "operatorSignature"
+      ],
+      "properties": {
+        "version": { "type": "integer", "minimum": 1, "maximum": 1 },
+        "suite": { "type": "string", "knownValues": ["BLS12-381-THRESHOLD-KEM-HPKE-P256"] },
+        "requestHash": { "type": "string", "maxLength": 128 },
+        "committeeEpoch": { "type": "integer", "minimum": 1 },
+        "operatorId": { "type": "string", "maxLength": 256 },
+        "shareIndex": { "type": "integer", "minimum": 1, "maximum": 15 },
+        "recipientKeyHash": { "type": "string", "maxLength": 43 },
+        "envelope": { "type": "ref", "ref": "app.creaton.forum.requestKeyRelease#transportEnvelope" },
+        "shareProof": { "type": "string", "maxLength": 4096 },
+        "operatorSignature": { "type": "string", "maxLength": 4096 }
+      }
+    },
+    "transportEnvelope": {
+      "type": "object",
+      "required": ["version", "suite", "enc", "ciphertext"],
+      "properties": {
+        "version": { "type": "integer", "minimum": 2, "maximum": 2 },
+        "suite": {
+          "type": "string",
+          "knownValues": ["DHKEM-P256-HKDF-SHA256/HKDF-SHA256/AES-256-GCM"]
+        },
+        "enc": { "type": "string", "maxLength": 256 },
+        "ciphertext": { "type": "string", "maxLength": 8192 }
+      }
+    }
+  }
+}

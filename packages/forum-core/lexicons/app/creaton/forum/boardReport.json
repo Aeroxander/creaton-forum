@@ -1,0 +1,42 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.boardReport",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A board-scoped report for forum moderators. This is app-level governance and does not replace com.atproto.moderation.createReport for network abuse reports.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["board", "subject", "reasonType", "createdAt"],
+        "properties": {
+          "board": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The forum board whose moderators should review this report. Discovery path: '.board.uri'."
+          },
+          "subject": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The topic or comment being reported."
+          },
+          "reasonType": {
+            "type": "string",
+            "knownValues": ["spam", "rules", "harassment", "other"]
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "maxGraphemes": 1000
+          },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "resolvedAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "If present, a moderator has marked this board report resolved."
+          }
+        }
+      }
+    }
+  }
+}

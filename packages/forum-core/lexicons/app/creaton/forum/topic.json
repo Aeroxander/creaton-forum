@@ -1,0 +1,83 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.topic",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A topic (thread) within a forum board. Points back to its board via a strongRef so Constellation backlinks can list every topic in a board.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["board", "title", "createdAt"],
+        "properties": {
+          "board": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The board record this topic lives in. Discovery path: '.board.uri'."
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "maxGraphemes": 200
+          },
+          "body": {
+            "type": "string",
+            "maxLength": 20000,
+            "maxGraphemes": 20000,
+            "description": "Opening post body in Creaton forum markdown."
+          },
+          "protectedBody": {
+            "type": "ref",
+            "ref": "app.creaton.forum.encryptedContent",
+            "description": "Encrypted opening body for a protected board. Must not be combined with body."
+          },
+          "protectedAttachments": {
+            "type": "array",
+            "maxLength": 20,
+            "items": { "type": "ref", "ref": "app.creaton.forum.encryptedAttachment" },
+            "description": "Logos-hosted encrypted attachments for a protected topic."
+          },
+          "status": {
+            "type": "string",
+            "knownValues": ["open", "locked", "resolved"]
+          },
+          "pinned": {
+            "type": "boolean",
+            "description": "Whether the topic is stickied to the top of its board."
+          },
+          "movedTo": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "If moved, the new topic record this one was moved to."
+          },
+          "linkUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Optional external link associated with the topic."
+          },
+          "tags": {
+            "type": "array",
+            "maxLength": 10,
+            "items": { "type": "string", "maxLength": 40 }
+          },
+          "productionStage": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "Optional Creaton studio production stage tag."
+          },
+          "artifactUri": {
+            "type": "string",
+            "format": "at-uri",
+            "description": "Optional reference to a studio artifact this topic discusses."
+          },
+          "studioUri": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef"
+          },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "updatedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

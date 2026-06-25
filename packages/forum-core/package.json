@@ -1,0 +1,19 @@
+{
+  "name": "@creaton/forum-core",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@atproto/api": "^0.18.20",
+    "@atproto/common-web": "^0.4.11"
+  },
+  "devDependencies": {
+    "vitest": "4.1.0"
+  }
+}

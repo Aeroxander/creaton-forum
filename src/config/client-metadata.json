@@ -1,0 +1,22 @@
+{
+  "client_id": "https://local3768forumtest.whey.party/client-metadata.json",
+  "client_name": "ForumTest",
+  "client_uri": "https://local3768forumtest.whey.party",
+  "logo_uri": "https://local3768forumtest.whey.party/logo192.png",
+  "tos_uri": "https://local3768forumtest.whey.party/terms-of-service",
+  "policy_uri": "https://local3768forumtest.whey.party/privacy-policy",
+  "redirect_uris": [
+    "https://local3768forumtest.whey.party/callback"
+  ],
+  "scope": "atproto transition:generic",
+  "grant_types": [
+    "authorization_code",
+    "refresh_token"
+  ],
+  "response_types": [
+    "code"
+  ],
+  "token_endpoint_auth_method": "none",
+  "application_type": "web",
+  "dpop_bound_access_tokens": true
+}

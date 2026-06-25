@@ -1,0 +1,27 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.vote",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A vote (up or down) on a forum subject (topic or comment). Uses a deterministic rkey derived from the subject URI (client convention: hashRkey('vote', subjectUri)) so each user has at most one vote per subject and re-voting toggles direction idempotently. Vote counts are reconstructed via Constellation backlinks on '.subject.uri'.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["subject", "direction", "createdAt"],
+        "properties": {
+          "subject": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The topic or comment being voted on. Discovery path: '.subject.uri'."
+          },
+          "direction": {
+            "type": "string",
+            "knownValues": ["up", "down"]
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

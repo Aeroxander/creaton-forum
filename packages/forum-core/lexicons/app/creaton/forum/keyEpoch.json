@@ -1,0 +1,53 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.keyEpoch",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "A public capsule containing one board epoch key wrapped to a CREATE-elected threshold committee.",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": [
+          "board", "epoch", "committeeEpoch", "version", "suite",
+          "encapsulation", "nonce", "ciphertext", "keyCommitment", "policyHash", "createdAt"
+        ],
+        "properties": {
+          "board": { "type": "ref", "ref": "com.atproto.repo.strongRef" },
+          "epoch": {
+            "type": "string",
+            "maxLength": 10,
+            "description": "UTC key epoch in YYYY-MM-DD form."
+          },
+          "committeeEpoch": { "type": "integer", "minimum": 1 },
+          "version": { "type": "integer", "minimum": 1, "maximum": 1 },
+          "suite": {
+            "type": "string",
+            "knownValues": ["BLS12-381-THRESHOLD-KEM/AES-256-GCM"]
+          },
+          "encapsulation": {
+            "type": "bytes",
+            "description": "Threshold KEM encapsulation under the committee public key."
+          },
+          "nonce": {
+            "type": "bytes",
+            "description": "Random 12-byte nonce for the wrapped epoch-key ciphertext."
+          },
+          "ciphertext": {
+            "type": "bytes",
+            "description": "Authenticated ciphertext containing the 32-byte board epoch key."
+          },
+          "keyCommitment": {
+            "type": "bytes",
+            "description": "SHA-256 commitment to the plaintext board epoch key."
+          },
+          "policyHash": {
+            "type": "bytes",
+            "description": "Hash of the board access policy used when this key was created."
+          },
+          "createdAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}

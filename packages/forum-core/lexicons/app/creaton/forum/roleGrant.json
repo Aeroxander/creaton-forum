@@ -1,0 +1,38 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.roleGrant",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Authoritative delegation of a role within a forum board. Written by the board owner (who controls the repo where the board record lives) into their OWN repo, so the grant is verifiable: any client can confirm that the granting repo also authored the board record. This is the foundation of trustworthy moderation on atproto — unlike the self-asserted 'role' field on member records, a roleGrant proves the board owner actually delegated authority. Deterministic rkey convention: hashRkey('role', did + boardUri).",
+      "key": "tid",
+      "record": {
+        "type": "object",
+        "required": ["board", "subject", "role", "createdAt"],
+        "properties": {
+          "board": {
+            "type": "ref",
+            "ref": "com.atproto.repo.strongRef",
+            "description": "The board the grant applies to. MUST live in the same repo as this roleGrant record for the grant to be authoritative."
+          },
+          "subject": {
+            "type": "string",
+            "format": "did",
+            "description": "The DID receiving the granted role."
+          },
+          "role": {
+            "type": "string",
+            "knownValues": ["moderator", "owner"],
+            "description": "The role granted. 'owner' grants are typically only self-granted by the board creator."
+          },
+          "createdAt": { "type": "string", "format": "datetime" },
+          "revokedAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "If set, the grant is revoked as of this time."
+          }
+        }
+      }
+    }
+  }
+}

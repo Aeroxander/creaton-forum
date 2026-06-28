@@ -49,3 +49,12 @@ dist
 # Docker volume data
 .docker
 .vxrn-entry-native.tsx
+
+# local agent / dev tooling
+.agents/
+.cursor/
+.dev/
+.kimchi/
+
+# Rust build output
+packages/*/target/

@@ -1,22 +1,30 @@
 import { abstractWalletConnector } from '@abstract-foundation/agw-react/connectors'
-import { abstract, abstractTestnet, arbitrum, base, mainnet, optimism } from 'viem/chains'
 import { createConfig, http } from 'wagmi'
 import { injected } from 'wagmi/connectors'
 
+import {
+  configuredTempoChainId,
+  SUPPORTED_WALLET_CHAINS,
+  tempoMainnet,
+  tempoTestnet,
+} from '~/features/wallets/chains'
+
 const isDev = import.meta.env.DEV
+const defaultChainId = configuredTempoChainId()
+
+const walletChains = SUPPORTED_WALLET_CHAINS.map((entry) => entry.chain)
+const defaultChain =
+  walletChains.find((chain) => chain.id === defaultChainId) ??
+  (isDev ? tempoTestnet : tempoMainnet)
+const otherChains = walletChains.filter((chain) => chain.id !== defaultChain.id)
+
+export { tempoMainnet, tempoTestnet }
 
 export const wagmiConfig = createConfig({
-  chains: isDev
-    ? [abstractTestnet, mainnet, base, optimism, arbitrum]
-    : [abstract, abstractTestnet, mainnet, base, optimism, arbitrum],
+  chains: [defaultChain, ...otherChains],
   connectors: [injected(), abstractWalletConnector()],
-  transports: {
-    [abstract.id]: http(),
-    [abstractTestnet.id]: http(),
-    [mainnet.id]: http(),
-    [base.id]: http(),
-    [optimism.id]: http(),
-    [arbitrum.id]: http(),
-  },
+  transports: Object.fromEntries(
+    walletChains.map((chain) => [chain.id, http()]),
+  ),
   ssr: false,
 })

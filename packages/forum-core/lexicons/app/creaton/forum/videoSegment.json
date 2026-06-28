@@ -1,0 +1,22 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.videoSegment",
+  "defs": {
+    "main": {
+      "type": "object",
+      "description": "One HLS media segment stored on the author's PDS.",
+      "required": ["name", "blob"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "maxLength": 255,
+          "description": "Relative path of the segment within the HLS bundle, e.g. seg_000.ts."
+        },
+        "blob": {
+          "type": "blob",
+          "accept": ["video/mp2t", "video/mp4", "application/octet-stream"]
+        }
+      }
+    }
+  }
+}

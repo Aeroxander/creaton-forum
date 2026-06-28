@@ -144,6 +144,13 @@ export default {
           imageHeight: 80,
         },
       ],
+      [
+        'ffmpeg-expo',
+        {
+          enableEncoders: ['libx264', 'aac'],
+          enableDecoders: ['h264', 'hevc', 'aac', 'mp3'],
+        },
+      ],
       // hot-updater for OTA updates - uncomment and configure if needed
       // [
       //   '@hot-updater/react-native',

@@ -4,14 +4,17 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./crypto/*": "./src/crypto/*"
   },
   "scripts": {
     "test": "vitest run"
   },
   "dependencies": {
     "@atproto/api": "^0.18.20",
-    "@atproto/common-web": "^0.4.11"
+    "@atproto/common-web": "^0.4.11",
+    "@noble/curves": "^1.9.7",
+    "@noble/hashes": "^1.8.0"
   },
   "devDependencies": {
     "vitest": "4.1.0"

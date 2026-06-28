@@ -48,8 +48,8 @@ export type CreatonForumAccessPolicy = {
   kind: "protected";
   issuerDid: string;
   issuerEndpoint: string;
-  paymentProtocol: "mpp" | "direct-usdc";
-  chainId: 2741 | 11124;
+  paymentProtocol: "mpp" | "tempo";
+  chainId: 2741 | 11124 | 4217 | 42429;
   asset: string;
   amount: string;
   durationSeconds: number;
@@ -65,7 +65,7 @@ export type CreatonForumAccessPolicy = {
 
 export type CreatonForumEncryptedContentV1 = {
   version: 1;
-  suite: "HKDF-SHA256/AES-256-GCM";
+  suite: "BLS12-381-THRESHOLD-DH/HKDF-SHA256/AES-256-GCM";
   epoch: string;
   salt: { $bytes: string };
   nonce: { $bytes: string };
@@ -125,6 +125,39 @@ export type CreatonForumEncryptedAttachment = {
   wrappedFileKey: { $bytes: string };
 };
 
+/** Blob reference as stored on ATProto records after uploadBlob. */
+export type CreatonAtprotoBlobRef = {
+  $type?: "blob";
+  ref: { $link: string } | { toString(): string };
+  mimeType: string;
+  size: number;
+};
+
+export type CreatonForumVideoSegment = {
+  name: string;
+  blob: CreatonAtprotoBlobRef;
+};
+
+export type CreatonForumVideoEncryption = {
+  version: 1;
+  suite: "AES-128-CBC-HLS+HKDF-SHA256/AES-GCM";
+  epoch: string;
+  keyEpochUri: string;
+  keyNonce: { $bytes: string };
+  wrappedKey: { $bytes: string };
+  iv: { $bytes: string };
+};
+
+export type CreatonForumVideoAsset = {
+  version: 1;
+  playlist: CreatonAtprotoBlobRef;
+  segments: CreatonForumVideoSegment[];
+  duration?: number;
+  width?: number;
+  height?: number;
+  encryption?: CreatonForumVideoEncryption;
+};
+
 export type CreatonForumTopicRecord = {
   $type: typeof CREATON_FORUM_TOPIC_COLLECTION;
   board: StrongRef;
@@ -132,6 +165,7 @@ export type CreatonForumTopicRecord = {
   body?: string;
   protectedBody?: CreatonForumEncryptedContent;
   protectedAttachments?: CreatonForumEncryptedAttachment[];
+  video?: CreatonForumVideoAsset;
   status?: "open" | "locked" | "resolved";
   pinned?: boolean;
   movedTo?: StrongRef;
@@ -151,6 +185,7 @@ export type CreatonForumCommentRecord = {
   body?: string;
   protectedBody?: CreatonForumEncryptedContent;
   protectedAttachments?: CreatonForumEncryptedAttachment[];
+  video?: CreatonForumVideoAsset;
   createdAt: string;
   updatedAt?: string;
 };

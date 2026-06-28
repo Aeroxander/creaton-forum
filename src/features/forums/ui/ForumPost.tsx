@@ -3,11 +3,18 @@ import { SizableText, XStack, YStack } from 'tamagui'
 import type { Agent } from '@atproto/api'
 import {
   voteOnForumSubject,
+  type CreatonForumAccessPolicy,
+  type CreatonForumEncryptedContentV3,
   type ForumRecord,
   type CreatonForumCommentRecord,
   type CreatonForumTopicRecord,
 } from '@creaton/forum-core'
 
+import { isProductionForumCrypto } from '~/features/forums/crypto/forumCryptoMode'
+import {
+  classifyForumDecryptionError,
+  useDecryptedForumBody,
+} from '~/features/forums/useForumDecryption'
 import { useForumKarma } from '~/features/forums/useForumKarma'
 import { useQueryIdentity, useQueryProfile } from '~/features/profile/profileQueries'
 import {
@@ -19,6 +26,9 @@ import { Avatar } from '~/interface/avatars/Avatar'
 import { Button } from '~/interface/buttons/Button'
 import { formatForumDate, forumThreadMarginLeft } from '~/features/forums/ui/forumUtils'
 import { ForumMarkdown } from '~/features/forums/ui/ForumMarkdown'
+import { ForumAttachmentList } from '~/features/forums/ui/ForumAttachmentList'
+import { ForumVideoAttachment } from '~/features/forums/ui/video/ForumVideoAttachment'
+import { ProtectedForumBody } from '~/features/forums/ui/ProtectedForumBody'
 
 type PostKind = 'topic' | 'comment'
 
@@ -32,6 +42,14 @@ export function ForumPost({
   mergeTop = false,
   mergeBottom = false,
   followsTopic = false,
+  boardUri,
+  access,
+  hasBoardAccess,
+  participantIds,
+  decryptedBody,
+  fundWallet,
+  unlocking,
+  onUnlock,
   onVoted,
   onReply,
 }: {
@@ -44,6 +62,20 @@ export function ForumPost({
   mergeTop?: boolean
   mergeBottom?: boolean
   followsTopic?: boolean
+  boardUri?: string
+  access?: CreatonForumAccessPolicy
+  hasBoardAccess?: boolean
+  participantIds?: string[]
+  decryptedBody?: string
+  fundWallet?: {
+    did: string | undefined
+    walletAddress: string | undefined
+    balance?: bigint
+    requiredAmount: string | bigint
+    onFunded?: () => void
+  }
+  unlocking?: boolean
+  onUnlock?: () => void
   onVoted?: () => void
   onReply?: () => void
 }) {
@@ -52,12 +84,38 @@ export function ForumPost({
   const karma = useForumKarma(authorDid)
   const [busy, setBusy] = useState(false)
 
-  const body =
-    'body' in record.value && record.value.body
-      ? record.value.body
-      : 'protectedBody' in record.value
-        ? '[Encrypted content]'
-        : ''
+  const protectedBody =
+    'protectedBody' in record.value
+      ? (record.value.protectedBody as CreatonForumEncryptedContentV3 | undefined)
+      : undefined
+  const protectedAttachments =
+    'protectedAttachments' in record.value ? record.value.protectedAttachments : undefined
+
+  const isMppUnlock =
+    isProductionForumCrypto() && access?.paymentProtocol === 'mpp' && !!protectedBody
+
+  const decrypted = useDecryptedForumBody({
+    protectedBody,
+    boardUri,
+    recordUri: record.uri,
+    recordType: kind,
+    access,
+    hasBoardAccess,
+    participantIds,
+    enabled: !isMppUnlock && decryptedBody === undefined,
+  })
+
+  const decryptErrorKind =
+    decrypted.isError && decrypted.error instanceof Error
+      ? classifyForumDecryptionError(decrypted.error.message)
+      : null
+
+  const resolvedBody =
+    decryptedBody ??
+    ('body' in record.value && record.value.body ? record.value.body : undefined) ??
+    decrypted.data
+
+  const showProtectedPlaceholder = !!protectedBody && !resolvedBody
 
   const title = 'title' in record.value ? record.value.title : undefined
 
@@ -91,8 +149,15 @@ export function ForumPost({
     }),
   })
 
-  const showScore = kind === 'topic' || score !== 0
+  const authorPdsUrl = resolveProfilePdsUrl({
+    identityPds: identity.data?.pds,
+    agent,
+    did: authorDid,
+  })
 
+  const video = 'video' in record.value ? record.value.video : undefined
+
+  const showScore = kind === 'topic' || score !== 0
   const nested = kind === 'comment' && depth > 0
 
   const postBody = (
@@ -122,7 +187,52 @@ export function ForumPost({
         </SizableText>
       ) : null}
 
-      {body ? <ForumMarkdown body={body} /> : null}
+      {resolvedBody ? <ForumMarkdown body={resolvedBody} /> : null}
+
+      {video ? (
+        <ForumVideoAttachment
+          authorDid={authorDid}
+          video={video}
+          pdsUrl={authorPdsUrl}
+          boardUri={boardUri}
+          recordUri={record.uri}
+          recordType={kind}
+          protectedBody={protectedBody}
+          access={access}
+        />
+      ) : null}
+
+      {showProtectedPlaceholder ? (
+        isMppUnlock || onUnlock ? (
+          <ProtectedForumBody
+            fundWallet={fundWallet}
+            onUnlock={onUnlock}
+            unlocking={unlocking || decrypted.isLoading}
+            paymentProtocol={access?.paymentProtocol}
+          />
+        ) : (
+          <SizableText size="$3" opacity={0.7}>
+            {decrypted.isLoading
+              ? '[Unlocking encrypted content…]'
+              : decryptErrorKind === 'subscribe'
+                ? '[Encrypted content — subscribe on the board page to unlock]'
+                : decryptErrorKind === 'funding'
+                  ? '[Encrypted content — add USDC to your wallet to unlock]'
+                  : '[Encrypted content — subscribe to unlock]'}
+          </SizableText>
+        )
+      ) : null}
+
+      {protectedAttachments?.length && boardUri ? (
+        <ForumAttachmentList
+          attachments={protectedAttachments}
+          boardUri={boardUri}
+          recordUri={record.uri}
+          recordType={kind}
+          protectedBody={protectedBody}
+          access={access}
+        />
+      ) : null}
 
       <XStack gap="$2" items="center" flexWrap="wrap">
         <Button size="$2" disabled={!agent || busy} onPress={() => handleVote('up')}>

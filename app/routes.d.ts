@@ -34,31 +34,67 @@ declare module 'one' {
         | `/register`
       DynamicRoutes: 
         | `/(app)/home/(tabs)/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}`
+        | `/(app)/home/(tabs)/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}/event/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}`
+        | `/(app)/home/(tabs)/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}/events`
+        | `/(app)/home/(tabs)/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}/moderation`
         | `/(app)/home/(tabs)/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}/topic/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}`
         | `/(app)/home/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}`
+        | `/(app)/home/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}/event/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}`
+        | `/(app)/home/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}/events`
+        | `/(app)/home/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}/moderation`
         | `/(app)/home/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}/topic/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}`
         | `/home/(tabs)/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}`
+        | `/home/(tabs)/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}/event/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}`
+        | `/home/(tabs)/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}/events`
+        | `/home/(tabs)/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}/moderation`
         | `/home/(tabs)/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}/topic/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}`
         | `/home/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}`
+        | `/home/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}/event/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}`
+        | `/home/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}/events`
+        | `/home/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}/moderation`
         | `/home/forums/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}/topic/${OneRouter.SingleRoutePart<T>}/${OneRouter.SingleRoutePart<T>}`
       DynamicRouteTemplate: 
         | `/(app)/home/(tabs)/forums/[boardDid]/[boardRkey]`
+        | `/(app)/home/(tabs)/forums/[boardDid]/[boardRkey]/event/[eventDid]/[eventRkey]`
+        | `/(app)/home/(tabs)/forums/[boardDid]/[boardRkey]/events`
+        | `/(app)/home/(tabs)/forums/[boardDid]/[boardRkey]/moderation`
         | `/(app)/home/(tabs)/forums/[boardDid]/[boardRkey]/topic/[topicDid]/[topicRkey]`
         | `/(app)/home/forums/[boardDid]/[boardRkey]`
+        | `/(app)/home/forums/[boardDid]/[boardRkey]/event/[eventDid]/[eventRkey]`
+        | `/(app)/home/forums/[boardDid]/[boardRkey]/events`
+        | `/(app)/home/forums/[boardDid]/[boardRkey]/moderation`
         | `/(app)/home/forums/[boardDid]/[boardRkey]/topic/[topicDid]/[topicRkey]`
         | `/home/(tabs)/forums/[boardDid]/[boardRkey]`
+        | `/home/(tabs)/forums/[boardDid]/[boardRkey]/event/[eventDid]/[eventRkey]`
+        | `/home/(tabs)/forums/[boardDid]/[boardRkey]/events`
+        | `/home/(tabs)/forums/[boardDid]/[boardRkey]/moderation`
         | `/home/(tabs)/forums/[boardDid]/[boardRkey]/topic/[topicDid]/[topicRkey]`
         | `/home/forums/[boardDid]/[boardRkey]`
+        | `/home/forums/[boardDid]/[boardRkey]/event/[eventDid]/[eventRkey]`
+        | `/home/forums/[boardDid]/[boardRkey]/events`
+        | `/home/forums/[boardDid]/[boardRkey]/moderation`
         | `/home/forums/[boardDid]/[boardRkey]/topic/[topicDid]/[topicRkey]`
       IsTyped: true
       RouteTypes: {
         '/(app)/home/(tabs)/forums/[boardDid]/[boardRkey]': RouteInfo<{ boardDid: string; boardRkey: string }>
+        '/(app)/home/(tabs)/forums/[boardDid]/[boardRkey]/event/[eventDid]/[eventRkey]': RouteInfo<{ boardDid: string; boardRkey: string; eventDid: string; eventRkey: string }>
+        '/(app)/home/(tabs)/forums/[boardDid]/[boardRkey]/events': RouteInfo<{ boardDid: string; boardRkey: string }>
+        '/(app)/home/(tabs)/forums/[boardDid]/[boardRkey]/moderation': RouteInfo<{ boardDid: string; boardRkey: string }>
         '/(app)/home/(tabs)/forums/[boardDid]/[boardRkey]/topic/[topicDid]/[topicRkey]': RouteInfo<{ boardDid: string; boardRkey: string; topicDid: string; topicRkey: string }>
         '/(app)/home/forums/[boardDid]/[boardRkey]': RouteInfo<{ boardDid: string; boardRkey: string }>
+        '/(app)/home/forums/[boardDid]/[boardRkey]/event/[eventDid]/[eventRkey]': RouteInfo<{ boardDid: string; boardRkey: string; eventDid: string; eventRkey: string }>
+        '/(app)/home/forums/[boardDid]/[boardRkey]/events': RouteInfo<{ boardDid: string; boardRkey: string }>
+        '/(app)/home/forums/[boardDid]/[boardRkey]/moderation': RouteInfo<{ boardDid: string; boardRkey: string }>
         '/(app)/home/forums/[boardDid]/[boardRkey]/topic/[topicDid]/[topicRkey]': RouteInfo<{ boardDid: string; boardRkey: string; topicDid: string; topicRkey: string }>
         '/home/(tabs)/forums/[boardDid]/[boardRkey]': RouteInfo<{ boardDid: string; boardRkey: string }>
+        '/home/(tabs)/forums/[boardDid]/[boardRkey]/event/[eventDid]/[eventRkey]': RouteInfo<{ boardDid: string; boardRkey: string; eventDid: string; eventRkey: string }>
+        '/home/(tabs)/forums/[boardDid]/[boardRkey]/events': RouteInfo<{ boardDid: string; boardRkey: string }>
+        '/home/(tabs)/forums/[boardDid]/[boardRkey]/moderation': RouteInfo<{ boardDid: string; boardRkey: string }>
         '/home/(tabs)/forums/[boardDid]/[boardRkey]/topic/[topicDid]/[topicRkey]': RouteInfo<{ boardDid: string; boardRkey: string; topicDid: string; topicRkey: string }>
         '/home/forums/[boardDid]/[boardRkey]': RouteInfo<{ boardDid: string; boardRkey: string }>
+        '/home/forums/[boardDid]/[boardRkey]/event/[eventDid]/[eventRkey]': RouteInfo<{ boardDid: string; boardRkey: string; eventDid: string; eventRkey: string }>
+        '/home/forums/[boardDid]/[boardRkey]/events': RouteInfo<{ boardDid: string; boardRkey: string }>
+        '/home/forums/[boardDid]/[boardRkey]/moderation': RouteInfo<{ boardDid: string; boardRkey: string }>
         '/home/forums/[boardDid]/[boardRkey]/topic/[topicDid]/[topicRkey]': RouteInfo<{ boardDid: string; boardRkey: string; topicDid: string; topicRkey: string }>
       }
     }

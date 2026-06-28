@@ -5,6 +5,7 @@ import {
   countDescendants,
   forumRecordAuthorDid,
   type CommentTreeNode,
+  type CreatonForumAccessPolicy,
   type CreatonForumCommentRecord,
   type ForumRecord,
 } from '@creaton/forum-core'
@@ -21,6 +22,14 @@ export function ForumCommentNode({
   depth = 0,
   connectToParent = false,
   followsTopic = false,
+  boardUri,
+  access,
+  hasBoardAccess,
+  participantIds,
+  decryptedBodies,
+  fundWallet,
+  unlockingUri,
+  onUnlockComment,
   voteScores,
   onVoted,
   onReply,
@@ -30,6 +39,20 @@ export function ForumCommentNode({
   depth?: number
   connectToParent?: boolean
   followsTopic?: boolean
+  boardUri?: string
+  access?: CreatonForumAccessPolicy
+  hasBoardAccess?: boolean
+  participantIds?: string[]
+  decryptedBodies?: Record<string, string>
+  fundWallet?: {
+    did: string | undefined
+    walletAddress: string | undefined
+    balance?: bigint
+    requiredAmount: string | bigint
+    onFunded?: () => void
+  }
+  unlockingUri?: string | null
+  onUnlockComment?: (comment: ForumRecord<CreatonForumCommentRecord>) => void
   voteScores: Map<string, number> | undefined
   onVoted: () => void
   onReply: (comment: ForumRecord<CreatonForumCommentRecord>) => void
@@ -54,6 +77,18 @@ export function ForumCommentNode({
         mergeTop={connectToParent}
         mergeBottom={showingChildren}
         followsTopic={followsTopic}
+        boardUri={boardUri}
+        access={access}
+        hasBoardAccess={hasBoardAccess}
+        participantIds={participantIds}
+        decryptedBody={decryptedBodies?.[node.comment.uri]}
+        fundWallet={fundWallet}
+        unlocking={unlockingUri === node.comment.uri}
+        onUnlock={
+          onUnlockComment && node.comment.value.protectedBody
+            ? () => onUnlockComment(node.comment)
+            : undefined
+        }
         onVoted={onVoted}
         onReply={() => onReply(node.comment)}
       />
@@ -73,6 +108,14 @@ export function ForumCommentNode({
               agent={agent}
               depth={depth + 1}
               connectToParent={index === 0}
+              boardUri={boardUri}
+              access={access}
+              hasBoardAccess={hasBoardAccess}
+              participantIds={participantIds}
+              decryptedBodies={decryptedBodies}
+              fundWallet={fundWallet}
+              unlockingUri={unlockingUri}
+              onUnlockComment={onUnlockComment}
               voteScores={voteScores}
               onVoted={onVoted}
               onReply={onReply}

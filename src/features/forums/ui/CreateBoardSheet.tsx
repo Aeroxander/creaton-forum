@@ -1,29 +1,103 @@
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { Agent } from '@atproto/api'
-import { createForumBoard } from '@creaton/forum-core'
+import { createForumBoard, parseAtUri } from '@creaton/forum-core'
 import { Dialog, Sheet, SizableText, useMedia, XStack, YStack } from 'tamagui'
 
+import { boardIdFromUri, provisionDevBoardDkgKey } from '~/features/forums/crypto/devBoardDkg'
+import { isProductionForumCrypto } from '~/features/forums/crypto/forumCryptoMode'
 import { Button } from '~/interface/buttons/Button'
 import { Input } from '~/interface/forms/Input'
 
 import { ClientSheet } from './ClientSheet'
 
-type PostingMode = 'public' | 'mixed' | 'encrypted'
+type PostingMode = 'public' | 'encrypted'
+type BoardType = 'community' | 'creator'
+type HistoryPolicy = 'full' | 'window' | 'forward'
 
 const POSTING_MODES: Array<{ value: PostingMode; label: string }> = [
   { value: 'public', label: 'Public board' },
-  { value: 'mixed', label: 'Public + member-only' },
   { value: 'encrypted', label: 'Member-only (encrypted)' },
 ]
+
+function protectedAccessPolicy(input: {
+  paymentProtocol: 'mpp' | 'tempo'
+  payTo: string
+  price: string
+  durationDays: string
+  historyPolicy: HistoryPolicy
+}) {
+  const required = (name: string) => {
+    const value = import.meta.env[name]
+    if (!value) throw new Error(`Paid forum deployment is missing ${name}.`)
+    return value
+  }
+  const amount = usdcUnits(input.price)
+  const days = Number(input.durationDays)
+  if (!Number.isInteger(days) || days < 1 || days > 3650) {
+    throw new Error('Access duration must be 1–3650 days.')
+  }
+  const isTempo = input.paymentProtocol === 'tempo'
+  return {
+    kind: 'protected' as const,
+    issuerDid: required('VITE_FORUM_ISSUER_DID'),
+    issuerEndpoint: required('VITE_CREATON_FORUM_APPVIEW_URL'),
+    paymentProtocol: input.paymentProtocol,
+    chainId: Number(
+      required(isTempo ? 'VITE_TEMPO_CHAIN_ID' : 'VITE_ABSTRACT_CHAIN_ID'),
+    ) as 2741 | 11124 | 4217 | 42429,
+    asset: required(isTempo ? 'VITE_TEMPO_PATHUSD_ADDRESS' : 'VITE_FORUM_USDC_ADDRESS'),
+    amount,
+    durationSeconds: days * 86_400,
+    payTo: input.payTo,
+    revenueRouter: required('VITE_FORUM_REVENUE_ROUTER'),
+    committeeRegistry: required('VITE_FORUM_COMMITTEE_REGISTRY'),
+    entitlementRegistry: required('VITE_FORUM_ENTITLEMENT_REGISTRY'),
+    committeeSize: 15 as const,
+    committeeThreshold: 10 as const,
+    historyPolicy: input.historyPolicy,
+    epochSeconds: 86_400 as const,
+  }
+}
+
+function requiredDeployment(name: string): string {
+  const value = import.meta.env[name]
+  if (!value) throw new Error(`Paid forum deployment is missing ${name}.`)
+  return value
+}
+
+function requiredAddressInput(value: string, label: string): string {
+  if (!/^0x[0-9a-fA-F]{40}$/.test(value)) throw new Error(`${label} must be a 0x EVM address.`)
+  return value
+}
+
+function usdcUnits(value: string): string {
+  if (!/^\d+(?:\.\d{1,6})?$/.test(value)) throw new Error('Price must be a positive USDC amount.')
+  const [whole, fraction = ''] = value.split('.')
+  const amount = BigInt(whole) * 1_000_000n + BigInt(fraction.padEnd(6, '0'))
+  if (amount <= 0n) throw new Error('Price must be positive.')
+  return amount.toString()
+}
 
 function CreateBoardForm({
   title,
   setTitle,
   description,
   setDescription,
+  boardType,
+  setBoardType,
   postingMode,
   setPostingMode,
+  price,
+  setPrice,
+  durationDays,
+  setDurationDays,
+  historyPolicy,
+  setHistoryPolicy,
+  supportLabel,
+  setSupportLabel,
+  treasury,
+  setTreasury,
   error,
   agent,
   busy,
@@ -33,13 +107,27 @@ function CreateBoardForm({
   setTitle: (value: string) => void
   description: string
   setDescription: (value: string) => void
+  boardType: BoardType
+  setBoardType: (value: BoardType) => void
   postingMode: PostingMode
   setPostingMode: (value: PostingMode) => void
+  price: string
+  setPrice: (value: string) => void
+  durationDays: string
+  setDurationDays: (value: string) => void
+  historyPolicy: HistoryPolicy
+  setHistoryPolicy: (value: HistoryPolicy) => void
+  supportLabel: string
+  setSupportLabel: (value: string) => void
+  treasury: string
+  setTreasury: (value: string) => void
   error: string
   agent: Agent | null
   busy: boolean
   onCreate: () => void
 }) {
+  const protectedBoard = postingMode !== 'public'
+
   return (
     <YStack gap="$3">
       <SizableText size="$6" fontWeight="700">
@@ -48,13 +136,39 @@ function CreateBoardForm({
 
       <Input placeholder="Board title" value={title} onChangeText={setTitle} />
 
-      <Input
-        placeholder="Short description (optional)"
-        value={description}
-        onChangeText={setDescription}
-        multiline
-        height={80}
-      />
+      <YStack gap="$1">
+        <SizableText size="$3" fontWeight="600" opacity={0.7}>
+          Board type
+        </SizableText>
+        <XStack gap="$2" flexWrap="wrap">
+          {(['community', 'creator'] as const).map((type) => (
+            <Button
+              key={type}
+              size="$3"
+              theme={boardType === type ? 'blue' : undefined}
+              variant={boardType === type ? undefined : 'outlined'}
+              onPress={() => setBoardType(type)}
+            >
+              {type === 'community' ? 'Community board' : 'Creator board'}
+            </Button>
+          ))}
+        </XStack>
+      </YStack>
+
+      {boardType === 'creator' ? (
+        <YStack gap="$2">
+          <Input
+            placeholder="Membership label, e.g. Supporter"
+            value={supportLabel}
+            onChangeText={setSupportLabel}
+          />
+          <Input
+            placeholder="Creator treasury 0x…"
+            value={treasury}
+            onChangeText={setTreasury}
+          />
+        </YStack>
+      ) : null}
 
       <YStack gap="$1">
         <SizableText size="$3" fontWeight="600" opacity={0.7}>
@@ -75,12 +189,55 @@ function CreateBoardForm({
         </XStack>
       </YStack>
 
-      {postingMode !== 'public' ? (
+      {protectedBoard && !isProductionForumCrypto() ? (
         <SizableText size="$2" opacity={0.6}>
-          Member-only and encrypted boards require a paid access policy, which will be
-          available in a later phase.
+          Dev crypto mode uses local DKG only — no on-chain payment setup required.
         </SizableText>
       ) : null}
+
+      {protectedBoard && isProductionForumCrypto() ? (
+        <YStack gap="$2" p="$3" borderWidth={1} borderColor="$color5" rounded="$4">
+          <Input placeholder="Price in USDC" value={price} onChangeText={setPrice} />
+          <Input
+            placeholder="Access duration in days"
+            value={durationDays}
+            onChangeText={setDurationDays}
+          />
+          <SizableText size="$3" fontWeight="600" opacity={0.7}>
+            Archive access
+          </SizableText>
+          <XStack gap="$2" flexWrap="wrap">
+            {(
+              [
+                ['full', 'Full archive'],
+                ['window', 'Recent window'],
+                ['forward', 'From purchase'],
+              ] as const
+            ).map(([value, label]) => (
+              <Button
+                key={value}
+                size="$2"
+                theme={historyPolicy === value ? 'blue' : undefined}
+                variant={historyPolicy === value ? undefined : 'outlined'}
+                onPress={() => setHistoryPolicy(value)}
+              >
+                {label}
+              </Button>
+            ))}
+          </XStack>
+          <SizableText size="$2" opacity={0.6}>
+            Pricing becomes immutable after the first member-only post.
+          </SizableText>
+        </YStack>
+      ) : null}
+
+      <Input
+        placeholder="Short description (optional)"
+        value={description}
+        onChangeText={setDescription}
+        multiline
+        height={80}
+      />
 
       {error ? (
         <SizableText size="$3" color="$red10">
@@ -88,11 +245,7 @@ function CreateBoardForm({
         </SizableText>
       ) : null}
 
-      <Button
-        theme="blue"
-        disabled={!agent || busy || !title.trim()}
-        onPress={onCreate}
-      >
+      <Button theme="blue" disabled={!agent || busy || !title.trim()} onPress={onCreate}>
         {busy ? 'Creating...' : 'Create board'}
       </Button>
     </YStack>
@@ -115,14 +268,26 @@ export function CreateBoardSheet({
   const isDesktop = media.md
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [boardType, setBoardType] = useState<BoardType>('creator')
   const [postingMode, setPostingMode] = useState<PostingMode>('public')
+  const [price, setPrice] = useState('1')
+  const [durationDays, setDurationDays] = useState('30')
+  const [historyPolicy, setHistoryPolicy] = useState<HistoryPolicy>('full')
+  const [supportLabel, setSupportLabel] = useState('Supporter')
+  const [treasury, setTreasury] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
   const reset = () => {
     setTitle('')
     setDescription('')
+    setBoardType('creator')
     setPostingMode('public')
+    setPrice('1')
+    setDurationDays('30')
+    setHistoryPolicy('full')
+    setSupportLabel('Supporter')
+    setTreasury('')
     setError('')
   }
 
@@ -131,11 +296,43 @@ export function CreateBoardSheet({
     setBusy(true)
     setError('')
     try {
-      await createForumBoard(agent, {
+      const protectedBoard = postingMode !== 'public'
+      const creatorTreasury = treasury.trim()
+      const created = await createForumBoard(agent, {
         title: title.trim(),
         description: description.trim() || undefined,
         postingMode,
+        scope: boardType === 'creator' ? 'creator' : 'standalone',
+        creatorBoard:
+          boardType === 'creator'
+            ? {
+                kind: 'creator',
+                supportLabel: supportLabel.trim() || 'Supporter',
+                treasury: creatorTreasury || undefined,
+              }
+            : undefined,
+        access:
+          protectedBoard && isProductionForumCrypto()
+            ? protectedAccessPolicy({
+                paymentProtocol: boardType === 'creator' ? 'tempo' : 'mpp',
+                payTo:
+                  boardType === 'creator'
+                    ? requiredAddressInput(creatorTreasury, 'Creator treasury')
+                    : requiredDeployment('VITE_FORUM_POSTER_REWARD_VAULT'),
+                price,
+                durationDays,
+                historyPolicy,
+              })
+            : undefined,
       })
+
+      if (postingMode === 'encrypted' && !isProductionForumCrypto()) {
+        const parsed = parseAtUri(created.uri)
+        if (parsed && agent.did) {
+          await provisionDevBoardDkgKey(boardIdFromUri(created.uri), agent.did)
+        }
+      }
+
       reset()
       onOpenChange(false)
       onCreated?.()
@@ -153,8 +350,20 @@ export function CreateBoardSheet({
     setTitle,
     description,
     setDescription,
+    boardType,
+    setBoardType,
     postingMode,
     setPostingMode,
+    price,
+    setPrice,
+    durationDays,
+    setDurationDays,
+    historyPolicy,
+    setHistoryPolicy,
+    supportLabel,
+    setSupportLabel,
+    treasury,
+    setTreasury,
     error,
     agent,
     busy,
@@ -191,7 +400,7 @@ export function CreateBoardSheet({
           open={open}
           onOpenChange={onOpenChange}
           modal
-          snapPoints={[60]}
+          snapPoints={[70]}
           dismissOnSnapToBottom
         >
           <Sheet.Overlay />

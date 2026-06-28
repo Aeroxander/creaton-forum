@@ -131,14 +131,13 @@
         },
         "paymentProtocol": {
           "type": "string",
-          "knownValues": ["mpp", "direct-usdc"],
-          "description": "MPP is used for HTTP/API pay-before-access flows. direct-usdc is used for wallet-initiated creator or board subscriptions."
+          "knownValues": ["mpp", "tempo"],
+          "description": "MPP charge is used for community boards. tempo subscription is used for creator board Patreon-style support."
         },
         "chainId": {
           "type": "integer",
           "minimum": 2741,
-          "maximum": 11124,
-          "description": "Abstract mainnet (2741) or Abstract testnet (11124)."
+          "description": "Abstract mainnet (2741), Abstract testnet (11124), Tempo mainnet (4217), or Tempo testnet (42429)."
         },
         "asset": {
           "type": "string",

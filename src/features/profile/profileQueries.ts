@@ -142,3 +142,44 @@ export function useQueryIdentity(identifier: string | undefined, agent?: Agent |
     constructIdentityQuery(identifier, slingshoturl, localIdentityForAgent(agent)),
   )
 }
+
+export function constructArbitraryQuery(uri?: string, slingshoturl?: string) {
+  return queryOptions({
+    queryKey: ['arbitrary', uri],
+    queryFn: async () => {
+      if (!uri) return undefined
+      const res = await fetch(
+        buildServiceUrl(
+          slingshoturl || 'slingshot.microcosm.blue',
+          `/xrpc/com.bad-example.repo.getUriRecord?at_uri=${encodeURIComponent(uri)}`,
+        ),
+      )
+      let data: unknown
+      try {
+        data = await res.json()
+      } catch {
+        return undefined
+      }
+      if (res.status === 400) return undefined
+      if (
+        data &&
+        typeof data === 'object' &&
+        'error' in data &&
+        (data as { error?: string }).error === 'InvalidRequest' &&
+        String((data as { message?: string }).message ?? '').includes('Could not find repo')
+      ) {
+        return undefined
+      }
+      if (!res.ok) return undefined
+      return data as { uri: string; cid: string; value: Record<string, unknown> }
+    },
+    enabled: !!uri,
+    staleTime: 60 * 1000,
+    retry: false,
+  })
+}
+
+export function useQueryArbitrary(uri?: string) {
+  const slingshoturl = useAtomValue(slingshotURLAtom)
+  return useQuery(constructArbitraryQuery(uri, slingshoturl))
+}

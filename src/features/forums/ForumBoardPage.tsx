@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLocalSearchParams, type Href } from 'one'
 import { useEffect, useMemo, useState } from 'react'
-import { Spinner, YStack } from 'tamagui'
+import { Spinner, SizableText, YStack } from 'tamagui'
 import {
   getForumBoard,
   joinForumBoard,
@@ -14,9 +14,15 @@ import { buildForumTopicMetadata, sortForumTopics, type ForumTopicSort } from '@
 
 import { markForumBoardSeen } from '~/features/forums/forumSeen'
 import { toStringKeyMap } from '~/features/forums/forumMaps'
+import {
+  cacheForumBoardEntitlement,
+  useCanAccessForumBoard,
+} from '~/features/forums/useForumBoardAccess'
+import { useForumEncryptionParameters } from '~/features/forums/useForumEncryptionParameters'
 import { useForumConfig } from '~/features/forums/useForumQueries'
 import { CreateTopicSheet } from '~/features/forums/ui/CreateTopicSheet'
 import {
+  ForumBoardSideMenu,
   ForumEmpty,
   ForumPage,
   ForumPanel,
@@ -51,6 +57,12 @@ export function ForumBoardPage() {
         slingshoturl,
       }),
     enabled: !!params.boardDid && !!params.boardRkey,
+  })
+
+  const encryptionParams = useForumEncryptionParameters(boardUri, board.data?.value)
+  const boardAccess = useCanAccessForumBoard({
+    boardUri,
+    boardRecord: board.data?.value,
   })
 
   const boardRef = board.data
@@ -123,6 +135,18 @@ export function ForumBoardPage() {
     void queryClient.invalidateQueries({ queryKey: ['forum-topics', boardRef.uri] })
   }
 
+  const handleSubscribed = (entitlement?: {
+    validFrom: string
+    validUntil: string
+    paymentRef: string | null
+  }) => {
+    if (agent?.did && entitlement) {
+      cacheForumBoardEntitlement(queryClient, boardUri, agent.did, entitlement)
+    }
+    void queryClient.invalidateQueries({ queryKey: ['forum-board-access', boardUri] })
+    void queryClient.invalidateQueries({ queryKey: ['__volatile', 'forum-decrypt'] })
+  }
+
   const handleJoin = async () => {
     if (!agent || !board.data) return
     await joinForumBoard(agent, { uri: board.data.uri, cid: board.data.cid })
@@ -155,12 +179,22 @@ export function ForumBoardPage() {
             status={status}
             onJoin={handleJoin}
             onCreate={() => setCreateOpen(true)}
+            canPost={boardAccess.hasAccess}
+          />
+        }
+        sideMenu={
+          <ForumBoardSideMenu
+            boardDid={params.boardDid!}
+            boardRkey={params.boardRkey!}
+            boardUri={boardUri}
+            boardRecord={board.data.value}
+            onSubscribed={(entitlement) => handleSubscribed(entitlement)}
           />
         }
       >
         {board.data.value.description ? (
           <YStack mb="$3" opacity={0.7}>
-            {board.data.value.description}
+            <SizableText size="$4">{board.data.value.description}</SizableText>
           </YStack>
         ) : null}
 
@@ -197,6 +231,9 @@ export function ForumBoardPage() {
         onOpenChange={setCreateOpen}
         agent={agent}
         board={{ uri: board.data.uri, cid: board.data.cid }}
+        boardRecord={board.data.value}
+        encryptionParams={encryptionParams.data}
+        canPost={boardAccess.hasAccess}
         onCreated={refresh}
       />
     </PageContainer>
@@ -208,11 +245,13 @@ function XStackActions({
   status,
   onJoin,
   onCreate,
+  canPost = true,
 }: {
   agent: ReturnType<typeof useAuth>['agent']
   status: ReturnType<typeof useAuth>['status']
   onJoin: () => void
   onCreate: () => void
+  canPost?: boolean
 }) {
   return (
     <YStack gap="$2">
@@ -221,7 +260,12 @@ function XStackActions({
           <Button size="$3" variant="outlined" onPress={onJoin}>
             Join
           </Button>
-          <Button size="$3" theme="blue" onPress={onCreate}>
+          <Button
+            size="$3"
+            theme="blue"
+            onPress={onCreate}
+            disabled={!canPost}
+          >
             New topic
           </Button>
         </>

@@ -1,0 +1,23 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.videoEncryption",
+  "defs": {
+    "main": {
+      "type": "object",
+      "description": "AES-128 HLS encryption metadata. Segments are stored encrypted on the PDS; the content key is wrapped by the board epoch key.",
+      "required": ["version", "suite", "epoch", "keyEpochUri", "keyNonce", "wrappedKey", "iv"],
+      "properties": {
+        "version": { "type": "integer", "minimum": 1, "maximum": 1 },
+        "suite": {
+          "type": "string",
+          "knownValues": ["AES-128-CBC-HLS+HKDF-SHA256/AES-GCM"]
+        },
+        "epoch": { "type": "string", "maxLength": 10 },
+        "keyEpochUri": { "type": "string", "format": "at-uri" },
+        "keyNonce": { "type": "bytes" },
+        "wrappedKey": { "type": "bytes" },
+        "iv": { "type": "bytes", "description": "16-byte IV used for AES-128-CBC HLS segment encryption." }
+      }
+    }
+  }
+}

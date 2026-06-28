@@ -1,0 +1,39 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.videoAsset",
+  "defs": {
+    "main": {
+      "type": "object",
+      "description": "An HLS video packaged for forum playback. Segments and playlists are stored as PDS blobs. Protected boards use AES-128 HLS with a wrapped key in encryption.",
+      "required": ["version", "playlist", "segments"],
+      "properties": {
+        "version": { "type": "integer", "minimum": 1, "maximum": 1 },
+        "playlist": {
+          "type": "blob",
+          "accept": ["application/vnd.apple.mpegurl", "application/x-mpegURL", "text/plain"]
+        },
+        "segments": {
+          "type": "array",
+          "minLength": 1,
+          "maxLength": 500,
+          "items": {
+            "type": "ref",
+            "ref": "app.creaton.forum.videoSegment"
+          }
+        },
+        "duration": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Duration in seconds."
+        },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "encryption": {
+          "type": "ref",
+          "ref": "app.creaton.forum.videoEncryption",
+          "description": "Present when segments are AES-128 encrypted for a protected board."
+        }
+      }
+    }
+  }
+}

@@ -37,6 +37,11 @@
             "items": { "type": "ref", "ref": "app.creaton.forum.encryptedAttachment" },
             "description": "Logos-hosted encrypted attachments for a protected reply."
           },
+          "video": {
+            "type": "ref",
+            "ref": "app.creaton.forum.videoAsset",
+            "description": "Optional HLS video stored on the author's PDS (public boards)."
+          },
           "createdAt": { "type": "string", "format": "datetime" },
           "updatedAt": { "type": "string", "format": "datetime" }
         }

@@ -6,6 +6,7 @@ import { one } from 'one/vite'
 import { visualizer } from 'rollup-plugin-visualizer'
 
 import type { Plugin, UserConfig } from 'vite'
+import { createLogger } from 'vite'
 
 const rootDir = import.meta.dirname
 
@@ -43,12 +44,33 @@ const eventemitter3 = resolve(
   rootDir,
   'node_modules/eventemitter3/dist/eventemitter3.esm.js',
 )
-const bufferShim = resolve(rootDir, 'src/shims/buffer.ts')
+const rpcWebsocketsBrowser = resolve(
+  rootDir,
+  'node_modules/rpc-websockets/dist/index.browser.mjs',
+)
+
+const crossmintReactUi = resolve(
+  rootDir,
+  'node_modules/@crossmint/client-sdk-react-ui/dist/index.js',
+)
+const crossmintReactBase = resolve(
+  rootDir,
+  'node_modules/@crossmint/client-sdk-react-base/dist/index.js',
+)
+
+const crossmintImportAliases = {
+  '@crossmint/client-sdk-react-ui/import': crossmintReactUi,
+  '@crossmint/client-sdk-react-base/import': crossmintReactBase,
+} as const
 
 const walletOptimizeDepsExclude = [
   '@abstract-foundation/agw-client',
   '@abstract-foundation/agw-react',
   '@privy-io/react-auth',
+  '@privy-io/cross-app-connect',
+  // vxrn misreads package.json "import" export conditions as subpaths.
+  '@crossmint/client-sdk-react-ui/import',
+  '@crossmint/client-sdk-react-base/import',
   ...solanaPackages,
 ] as const
 
@@ -56,7 +78,6 @@ const walletOptimizeDepsInclude = [
   'buffer',
   'eventemitter3',
   'fflate',
-  '@privy-io/cross-app-connect',
   '@abstract-foundation/agw-react/connectors',
   'wagmi',
   '@wagmi/core',
@@ -79,12 +100,24 @@ const ssrWalletExternal = [
 ] as const
 
 const walletResolveAliases = {
-  buffer: bufferShim,
+  'rpc-websockets': rpcWebsocketsBrowser,
   eventemitter3,
   '@abstract-foundation/agw-react/connectors': agwConnectors,
   '@abstract-foundation/agw-react/privy': agwPrivy,
   '@abstract-foundation/agw-react': agwReact,
+  ...crossmintImportAliases,
   ...solanaAliases,
+}
+
+function bufferResolvePlugin(): Plugin {
+  return {
+    name: 'buffer-resolve',
+    enforce: 'pre',
+    async resolveId(source, importer) {
+      if (source !== 'buffer/index.js') return null
+      return (await this.resolve('buffer', importer, { skipSelf: true }))?.id ?? null
+    },
+  }
 }
 
 function solanaBrowserResolvePlugin(): Plugin {
@@ -98,7 +131,24 @@ function solanaBrowserResolvePlugin(): Plugin {
   }
 }
 
+function createViteLogger() {
+  const logger = createLogger()
+  const warn = logger.warn.bind(logger)
+  logger.warn = (msg, options) => {
+    if (
+      typeof msg === 'string' &&
+      msg.includes('Sourcemap for') &&
+      msg.includes('points to missing source files')
+    ) {
+      return
+    }
+    warn(msg, options)
+  }
+  return logger
+}
+
 export default {
+  customLogger: createViteLogger(),
   server: {
     allowedHosts: ['host.docker.internal'],
   },
@@ -108,13 +158,17 @@ export default {
     conditions: ['browser', 'import', 'module', 'default'],
     alias: {
       jose: resolve(rootDir, 'node_modules/jose/dist/browser/index.js'),
+      '@atproto/common-web': resolve(
+        rootDir,
+        'node_modules/@atproto/common-web/dist/index.js',
+      ),
       // vxrn-web resolve conditions don't match these package export maps.
       ...walletResolveAliases,
     },
   },
 
   optimizeDeps: {
-    include: ['async-retry', ...walletOptimizeDepsInclude],
+    include: ['async-retry', '@creaton/forum-core', '@atproto/common-web', ...walletOptimizeDepsInclude],
     exclude: ['oxc-parser', 'jose', ...walletOptimizeDepsExclude],
     rolldownOptions: {
       resolve: {
@@ -146,6 +200,7 @@ export default {
   },
 
   plugins: [
+    bufferResolvePlugin(),
     solanaBrowserResolvePlugin(),
 
     tamaguiPlugin(

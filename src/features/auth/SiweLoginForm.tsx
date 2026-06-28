@@ -10,7 +10,12 @@ import { injected } from 'wagmi/connectors'
 
 import { createSiweLoginChallenge } from '~/features/auth/siweChallenges'
 import { CreatonHandleInput } from '~/features/auth/CreatonHandleInput'
-import { normalizePdsUrl, normalizeSiweIdentifier } from '~/features/wallets/siwe'
+import {
+  defaultPrimaryChainId,
+  getChainLabel,
+  normalizePdsUrl,
+  normalizeSiweIdentifier,
+} from '~/features/wallets/siwe'
 import { DEFAULT_PDS_URL } from '~/constants/urls'
 import { Button } from '~/interface/buttons/Button'
 import { Input } from '~/interface/forms/Input'
@@ -18,7 +23,7 @@ import { useAuth } from '~/providers/UnifiedAuthProvider'
 
 export function SiweLoginForm() {
   const { loginWithSiwe } = useAuth()
-  const { address, connector, isConnected, status } = useAccount()
+  const { address, chain, connector, isConnected, status } = useAccount()
   const { connect, connectors, isPending: isConnectPending } = useConnect()
   const { disconnect } = useDisconnect()
   const { signMessageAsync } = useSignMessage()
@@ -57,7 +62,7 @@ export function SiweLoginForm() {
 
   const connectInjected = () => {
     setError(null)
-    connect({ connector: injected() })
+    connect({ connector: injected(), chainId: defaultPrimaryChainId })
   }
 
   const handleSubmit = async () => {
@@ -123,7 +128,7 @@ export function SiweLoginForm() {
         >
           <SizableText size="$3" fontWeight="500">
             {address.slice(0, 6)}...{address.slice(-4)}
-            {isAbstractConnector ? ' · Abstract' : ''}
+            {isAbstractConnector ? ' · Abstract' : chain ? ` · ${getChainLabel(chain.id)}` : ''}
           </SizableText>
           <Button size="$2" variant="outlined" onPress={() => disconnect()}>
             Disconnect
@@ -131,15 +136,11 @@ export function SiweLoginForm() {
         </XStack>
       ) : (
         <YStack gap="$2">
-          <Button theme="blue" onPress={connectAbstract} disabled={isWalletConnecting || isSigningIn}>
-            Connect with Abstract
+          <Button theme="blue" onPress={connectInjected} disabled={isBusy || connectors.length === 0}>
+            Connect {getChainLabel(defaultPrimaryChainId)} wallet
           </Button>
-          <Button
-            variant="outlined"
-            onPress={connectInjected}
-            disabled={isBusy || connectors.length === 0}
-          >
-            Connect browser wallet
+          <Button variant="outlined" onPress={connectAbstract} disabled={isWalletConnecting || isSigningIn}>
+            Connect with Abstract
           </Button>
         </YStack>
       )}

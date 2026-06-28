@@ -35,7 +35,8 @@ export function QueryProvider({ children }: { children: ReactNode }) {
       persistOptions={{
         persister,
         dehydrateOptions: {
-          shouldDehydrateQuery: (query) => !query.queryKey.includes('__volatile'),
+          shouldDehydrateQuery: (query) =>
+          !query.queryKey.includes('__volatile') && query.queryKey[0] !== 'forum-decrypt',
         },
       }}
     >

@@ -1,2 +1,2 @@
-export type { EncryptedForumContent } from './forumContentCrypto';
-export { createForumKeyCapsule, type ForumKeyCapsule } from './forumContentCrypto';
+export type { EncryptedForumContent, ForumKeyCapsule } from './forumContentCrypto';
+export { createForumKeyCapsule } from './forumContentCrypto';

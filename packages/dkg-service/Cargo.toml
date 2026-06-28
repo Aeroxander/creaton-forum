@@ -1,0 +1,36 @@
+[package]
+name = "dkg-service"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+anyhow = "1"
+aes-gcm = "0.10"
+axum = "0.8"
+base64 = "0.22"
+clap = { version = "4", features = ["derive", "env"] }
+commonware-codec = "2026.5.0"
+commonware-cryptography = "2026.5.0"
+commonware-math = "2026.5.0"
+commonware-parallel = "2026.5.0"
+commonware-utils = "2026.5.0"
+hex = "0.4"
+hkdf = "0.12"
+num-traits = "0.2"
+rand = "0.9"
+rand_chacha = "0.3"
+rand_core = "0.6"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+thiserror = "2"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal", "net", "sync", "process"] }
+tower-http = { version = "0.6", features = ["cors"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[dev-dependencies]
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+tempfile = "3"
+tower = { version = "0.5", features = ["util"] }

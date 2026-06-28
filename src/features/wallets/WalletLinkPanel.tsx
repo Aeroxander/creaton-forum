@@ -64,7 +64,7 @@ export function WalletLinkPanel({ did }: { did: string | undefined }) {
 
   const connectInjected = () => {
     setError(null)
-    connect({ connector: injected() })
+    connect({ connector: injected(), chainId: defaultPrimaryChainId })
   }
 
   const connectAbstract = () => {
@@ -159,11 +159,11 @@ export function WalletLinkPanel({ did }: { did: string | undefined }) {
 
       {!isConnected ? (
         <YStack gap="$2">
-          <Button theme="blue" onPress={connectAbstract} disabled={isBusy}>
-            Connect with Abstract
+          <Button theme="blue" onPress={connectInjected} disabled={isBusy || connectors.length === 0}>
+            Connect {getChainLabel(defaultPrimaryChainId)} wallet
           </Button>
-          <Button variant="outlined" onPress={connectInjected} disabled={isBusy || connectors.length === 0}>
-            Connect browser wallet
+          <Button variant="outlined" onPress={connectAbstract} disabled={isBusy}>
+            Connect with Abstract
           </Button>
         </YStack>
       ) : (

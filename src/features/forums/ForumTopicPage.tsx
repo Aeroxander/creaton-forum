@@ -4,11 +4,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Spinner, YStack } from 'tamagui'
 import {
   buildCommentTree,
+  getForumBoard,
   getForumTopic,
   listForumComments,
   listForumVotes,
   mergeForumRecords,
+  parseAtUri,
+  type CreatonForumBoardRecord,
   type CreatonForumCommentRecord,
+  type CreatonForumEncryptedContentV3,
   type ForumRecord,
 } from '@creaton/forum-core'
 
@@ -20,8 +24,14 @@ import { ForumCommentNode, forumReplyTargetLabel } from '~/features/forums/ui/Fo
 import { ForumEmpty, ForumPage, ForumPanel, ForumSectionHeader } from '~/features/forums/ui/ForumChrome'
 import { ForumPost } from '~/features/forums/ui/ForumPost'
 import { ForumReplyBox } from '~/features/forums/ui/ForumReplyBox'
+import { CommunityBoardAccessPanel } from '~/features/onramp/CommunityBoardAccessPanel'
 import { PageContainer } from '~/interface/layout/PageContainer'
 import { useAuth } from '~/providers/UnifiedAuthProvider'
+import { isProductionForumCrypto } from '~/features/forums/crypto/forumCryptoMode'
+import { useCanAccessForumBoard } from '~/features/forums/useForumBoardAccess'
+import { useForumEncryptionParameters } from '~/features/forums/useForumEncryptionParameters'
+import { useForumUnlock } from '~/features/forums/useForumUnlock'
+import { useWalletUsdcBalance } from '~/features/onramp/useWalletUsdcBalance'
 
 export function ForumTopicPage() {
   const params = useLocalSearchParams<{
@@ -36,6 +46,9 @@ export function ForumTopicPage() {
   const [replyTarget, setReplyTarget] = useState<ForumRecord<CreatonForumCommentRecord> | null>(
     null,
   )
+  const [decryptedBodies, setDecryptedBodies] = useState<Record<string, string>>({})
+  const [unlockingUri, setUnlockingUri] = useState<string | null>(null)
+  const wallet = useWalletUsdcBalance()
 
   const topic = useQuery({
     queryKey: ['forum-topic', params.topicDid, params.topicRkey, slingshoturl],
@@ -47,6 +60,83 @@ export function ForumTopicPage() {
       }),
     enabled: !!params.topicDid && !!params.topicRkey,
   })
+
+  const boardUri = topic.data?.value.board?.uri
+  const boardParams = useMemo(() => {
+    if (!boardUri) return null
+    const parsed = parseAtUri(boardUri)
+    if (!parsed) return null
+    return { did: parsed.did, rkey: parsed.rkey, uri: boardUri }
+  }, [boardUri])
+
+  const board = useQuery({
+    queryKey: ['forum-board', boardParams?.uri, slingshoturl],
+    queryFn: async () => {
+      const result = await getForumBoard({
+        did: boardParams!.did,
+        rkey: boardParams!.rkey,
+        slingshoturl,
+      })
+      return result as ForumRecord<CreatonForumBoardRecord>
+    },
+    enabled: !!boardParams,
+  })
+
+  const participantIds = useMemo(
+    () =>
+      !isProductionForumCrypto() && agent?.did ? [agent.did] : undefined,
+    [agent?.did],
+  )
+
+  const boardAccess = useCanAccessForumBoard({
+    boardUri: boardParams?.uri ?? '',
+    boardRecord: board.data?.value,
+  })
+  const encryptionParams = useForumEncryptionParameters(
+    boardParams?.uri ?? '',
+    board.data?.value,
+  )
+  const { unlockMutation } = useForumUnlock(boardParams?.uri ?? '')
+  const access = board.data?.value.access
+
+  const fundWallet = useMemo(() => {
+    if (!access || access.paymentProtocol === 'tempo') return undefined
+    return {
+      did: agent?.did,
+      walletAddress: wallet.address,
+      balance: wallet.balance,
+      requiredAmount: access.amount,
+      onFunded: () => void wallet.refetch(),
+    }
+  }, [access, agent?.did, wallet.address, wallet.balance, wallet.refetch])
+
+  const unlockPost = useCallback(
+    (input: {
+      recordUri: string
+      recordType: 'topic' | 'comment'
+      protectedBody: CreatonForumEncryptedContentV3
+    }) => {
+      if (!boardParams?.uri || !access) return
+      setUnlockingUri(input.recordUri)
+      unlockMutation.mutate(
+        {
+          boardUri: boardParams.uri,
+          recordUri: input.recordUri,
+          recordType: input.recordType,
+          protectedBody: input.protectedBody,
+          access,
+        },
+        {
+          onSuccess: (plaintext) => {
+            setDecryptedBodies((current) => ({ ...current, [input.recordUri]: plaintext }))
+            setUnlockingUri(null)
+          },
+          onError: () => setUnlockingUri(null),
+        },
+      )
+    },
+    [access, boardParams?.uri, unlockMutation],
+  )
 
   const topicRef = useMemo(
     () =>
@@ -176,20 +266,43 @@ export function ForumTopicPage() {
     )
   }
 
-  const topicScore = voteMap?.get(topic.data.uri)?.score ?? 0
-  const topicAuthor = authorDidFromUri(topic.data.uri)
+  const topicRecord = topic.data
+  const topicScore = voteMap?.get(topicRecord.uri)?.score ?? 0
+  const topicAuthor = authorDidFromUri(topicRecord.uri)
 
   return (
     <PageContainer>
-      <ForumPage title={topic.data.value.title}>
+      <ForumPage title={topicRecord.value.title}>
+        {access?.paymentProtocol === 'mpp' ? (
+          <YStack mb="$3" display="flex" $md={{ display: 'none' }}>
+            <CommunityBoardAccessPanel access={access} />
+          </YStack>
+        ) : null}
         <ForumPanel>
           <ForumSectionHeader title="Discussion" />
           <ForumPost
             agent={agent}
             kind="topic"
-            record={topic.data}
+            record={topicRecord}
             authorDid={topicAuthor}
             score={topicScore}
+            boardUri={boardParams?.uri}
+            access={access}
+            hasBoardAccess={boardAccess.hasAccess}
+            participantIds={participantIds}
+            decryptedBody={decryptedBodies[topicRecord.uri]}
+            fundWallet={fundWallet}
+            unlocking={unlockingUri === topicRecord.uri}
+            onUnlock={
+              topicRecord.value.protectedBody
+                ? () =>
+                    unlockPost({
+                      recordUri: topicRecord.uri,
+                      recordType: 'topic',
+                      protectedBody: topicRecord.value.protectedBody as CreatonForumEncryptedContentV3,
+                    })
+                : undefined
+            }
             onVoted={refreshVotes}
           />
           {comments.isLoading ? (
@@ -205,7 +318,22 @@ export function ForumTopicPage() {
                 node={node}
                 agent={agent}
                 followsTopic={index === 0}
+                boardUri={boardParams?.uri}
+                access={access}
+                hasBoardAccess={boardAccess.hasAccess}
                 voteScores={commentScores}
+                participantIds={participantIds}
+                decryptedBodies={decryptedBodies}
+                fundWallet={fundWallet}
+                unlockingUri={unlockingUri}
+                onUnlockComment={(comment) => {
+                  if (!comment.value.protectedBody) return
+                  unlockPost({
+                    recordUri: comment.uri,
+                    recordType: 'comment',
+                    protectedBody: comment.value.protectedBody as CreatonForumEncryptedContentV3,
+                  })
+                }}
                 onVoted={refreshVotes}
                 onReply={setReplyTarget}
               />
@@ -214,6 +342,10 @@ export function ForumTopicPage() {
           <ForumReplyBox
             agent={agent}
             topic={topicRef!}
+            board={board.data ? { uri: board.data.uri, cid: board.data.cid } : undefined}
+            boardRecord={board.data?.value}
+            encryptionParams={encryptionParams.data}
+            canPost={boardAccess.hasAccess}
             parent={
               replyTarget ? { uri: replyTarget.uri, cid: replyTarget.cid } : undefined
             }

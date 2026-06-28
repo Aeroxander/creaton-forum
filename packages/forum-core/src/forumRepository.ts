@@ -7,6 +7,10 @@ import {
   encryptForumContent,
   generateForumEpochKey,
 } from "./crypto/forumContentCrypto";
+import { encryptForumAttachment } from "./crypto/forumAttachmentCrypto";
+import type { LogosStorageClient } from "./storage/logosStorageClient";
+import type { PackagedHlsBundle, VideoUploadProgress } from "./video/pdsVideoUpload";
+import { uploadEncryptedForumVideoToPds } from "./video/encryptedVideoUpload";
 import type { ForumKeyCapsule } from "./crypto/forumKeyCapsule";
 import { createForumKeyCapsule } from "./crypto/forumKeyCapsule";
 import {
@@ -22,6 +26,7 @@ import {
   CREATON_FORUM_COMMENT_COLLECTION,
   CREATON_FORUM_DIRECTORY_URI,
   CREATON_FORUM_KEY_CAPSULE_COLLECTION,
+  CREATON_FORUM_KEY_GRANT_COLLECTION,
   CREATON_FORUM_MEMBER_COLLECTION,
   CREATON_FORUM_MOD_ACTION_COLLECTION,
   CREATON_FORUM_MOD_LOG_COLLECTION,
@@ -37,6 +42,7 @@ import {
   type CreatonForumBookmarkRecord,
   type CreatonForumCommentRecord,
   type CreatonForumKeyCapsuleRecord,
+  type CreatonForumKeyGrantRecord,
   type CreatonForumMemberRecord,
   type CreatonForumModActionRecord,
   type CreatonForumModLogRecord,
@@ -45,6 +51,7 @@ import {
   type CreatonForumSanctionRecord,
   type CreatonForumSubscriptionRecord,
   type CreatonForumTopicRecord,
+  type CreatonForumVideoAsset,
   type CreatonForumVoteRecord,
   type CreatonForumEncryptedContentV3,
   type StrongRef,
@@ -173,7 +180,7 @@ export async function getForumBoard({
   did: string;
   rkey: string;
   slingshoturl?: string;
-}) {
+}): Promise<ForumRecord<CreatonForumBoardRecord> | null> {
   return getRecord<CreatonForumBoardRecord>({
     repo: did,
     collection: CREATON_FORUM_BOARD_COLLECTION,
@@ -215,7 +222,7 @@ export async function getForumTopic({
   did: string;
   rkey: string;
   slingshoturl?: string;
-}) {
+}): Promise<ForumRecord<CreatonForumTopicRecord> | null> {
   return getRecord<CreatonForumTopicRecord>({
     repo: did,
     collection: CREATON_FORUM_TOPIC_COLLECTION,
@@ -230,7 +237,7 @@ export async function getForumKeyCapsule({
 }: {
   uri: string;
   slingshoturl?: string;
-}): Promise<ForumRecord<CreatonForumKeyCapsuleRecord>> {
+}): Promise<ForumRecord<CreatonForumKeyCapsuleRecord> | null> {
   const parsed = parseAtUri(uri);
   if (!parsed || parsed.collection !== CREATON_FORUM_KEY_CAPSULE_COLLECTION) {
     throw new Error("Invalid forum key capsule URI.");
@@ -421,7 +428,7 @@ export async function createForumBoard(
 
 export async function createForumTopic(
   agent: Agent,
-  input: { board: StrongRef; title: string; body?: string },
+  input: { board: StrongRef; title: string; body?: string; video?: CreatonForumVideoAsset },
 ) {
   const repoAgent = requireRepoAgent(agent);
   const record: CreatonForumTopicRecord = {
@@ -429,6 +436,7 @@ export async function createForumTopic(
     board: input.board,
     title: input.title.trim(),
     body: input.body?.trim(),
+    video: input.video,
     createdAt: new Date().toISOString(),
   };
   return createRecord<CreatonForumTopicRecord>(repoAgent, {
@@ -439,13 +447,27 @@ export async function createForumTopic(
 
 export type ForumEncryptionParameters = {
   committeeEpoch: number;
-  committeePublicKey: string;
   policyHash: string;
+  committeePublicKey?: string;
+};
+
+export type EncryptedForumVideoBundleInput = {
+  bundle: PackagedHlsBundle;
+  pdsUrl: string;
+  onProgress?: (progress: VideoUploadProgress) => void;
 };
 
 export async function createEncryptedForumTopic(
   agent: Agent,
-  input: { board: StrongRef; title: string; body: string; encryption: ForumEncryptionParameters },
+  input: {
+    board: StrongRef;
+    title: string;
+    body: string;
+    encryption: ForumEncryptionParameters;
+    attachments?: File[];
+    logosClient?: LogosStorageClient;
+    encryptedVideo?: EncryptedForumVideoBundleInput;
+  },
 ) {
   const repoAgent = requireRepoAgent(agent);
   const topicRkey = TID.next().toString();
@@ -456,12 +478,12 @@ export async function createEncryptedForumTopic(
   const contentKey = generateForumEpochKey();
   const capsule = await createForumKeyCapsule({
     contentKey,
-    committeePublicKey: input.encryption.committeePublicKey,
     boardUri: input.board.uri,
     recordUri: topicUri,
     capsuleUri,
     committeeEpoch: input.encryption.committeeEpoch,
     policyHash: input.encryption.policyHash,
+    committeePublicKey: input.encryption.committeePublicKey,
     createdAt,
   });
   const protectedBody = await encryptForumContent({
@@ -476,6 +498,32 @@ export async function createEncryptedForumTopic(
       keyCapsuleUri: capsuleUri,
     },
   });
+  const protectedAttachments =
+    input.attachments?.length && input.logosClient
+      ? await Promise.all(
+          input.attachments.map((file) =>
+            encryptForumAttachment({
+              file,
+              boardEpochKey: contentKey,
+              keyEpochUri: capsuleUri,
+              logosClient: input.logosClient!,
+              epoch: currentForumKeyEpoch(new Date(createdAt)),
+            }),
+          ),
+        )
+      : undefined;
+  const epoch = currentForumKeyEpoch(new Date(createdAt));
+  let video: CreatonForumVideoAsset | undefined;
+  if (input.encryptedVideo) {
+    video = await uploadEncryptedForumVideoToPds(agent, {
+      bundle: input.encryptedVideo.bundle,
+      pdsUrl: input.encryptedVideo.pdsUrl,
+      boardEpochKey: contentKey,
+      keyEpochUri: capsuleUri,
+      epoch,
+      onProgress: input.encryptedVideo.onProgress,
+    });
+  }
   await createRecord(repoAgent, {
     collection: CREATON_FORUM_KEY_CAPSULE_COLLECTION,
     rkey: capsuleRkey,
@@ -490,6 +538,8 @@ export async function createEncryptedForumTopic(
         board: input.board,
         title: input.title.trim(),
         protectedBody: encryptedContentToRecord(protectedBody),
+        protectedAttachments,
+        video,
         createdAt,
       },
     });
@@ -503,7 +553,7 @@ export async function createEncryptedForumTopic(
 
 export async function createForumComment(
   agent: Agent,
-  input: { topic: StrongRef; parent?: StrongRef; body: string },
+  input: { topic: StrongRef; parent?: StrongRef; body: string; video?: CreatonForumVideoAsset },
 ) {
   const repoAgent = requireRepoAgent(agent);
   const record: CreatonForumCommentRecord = {
@@ -511,6 +561,7 @@ export async function createForumComment(
     topic: input.topic,
     parent: input.parent,
     body: input.body.trim(),
+    video: input.video,
     createdAt: new Date().toISOString(),
   };
   return createRecord<CreatonForumCommentRecord>(repoAgent, {
@@ -527,6 +578,9 @@ export async function createEncryptedForumComment(
     parent?: StrongRef;
     body: string;
     encryption: ForumEncryptionParameters;
+    attachments?: File[];
+    logosClient?: LogosStorageClient;
+    encryptedVideo?: EncryptedForumVideoBundleInput;
   },
 ) {
   const repoAgent = requireRepoAgent(agent);
@@ -538,12 +592,12 @@ export async function createEncryptedForumComment(
   const contentKey = generateForumEpochKey();
   const capsule = await createForumKeyCapsule({
     contentKey,
-    committeePublicKey: input.encryption.committeePublicKey,
     boardUri: input.board.uri,
     recordUri: commentUri,
     capsuleUri,
     committeeEpoch: input.encryption.committeeEpoch,
     policyHash: input.encryption.policyHash,
+    committeePublicKey: input.encryption.committeePublicKey,
     createdAt,
   });
   const protectedBody = await encryptForumContent({
@@ -554,6 +608,32 @@ export async function createEncryptedForumComment(
       committeeEpoch: input.encryption.committeeEpoch, keyCapsuleUri: capsuleUri,
     },
   });
+  const protectedAttachments =
+    input.attachments?.length && input.logosClient
+      ? await Promise.all(
+          input.attachments.map((file) =>
+            encryptForumAttachment({
+              file,
+              boardEpochKey: contentKey,
+              keyEpochUri: capsuleUri,
+              logosClient: input.logosClient!,
+              epoch: currentForumKeyEpoch(new Date(createdAt)),
+            }),
+          ),
+        )
+      : undefined;
+  const epoch = currentForumKeyEpoch(new Date(createdAt));
+  let video: CreatonForumVideoAsset | undefined;
+  if (input.encryptedVideo) {
+    video = await uploadEncryptedForumVideoToPds(agent, {
+      bundle: input.encryptedVideo.bundle,
+      pdsUrl: input.encryptedVideo.pdsUrl,
+      boardEpochKey: contentKey,
+      keyEpochUri: capsuleUri,
+      epoch,
+      onProgress: input.encryptedVideo.onProgress,
+    });
+  }
   await createRecord(repoAgent, {
     collection: CREATON_FORUM_KEY_CAPSULE_COLLECTION,
     rkey: capsuleRkey,
@@ -568,6 +648,8 @@ export async function createEncryptedForumComment(
         topic: input.topic,
         parent: input.parent,
         protectedBody: encryptedContentToRecord(protectedBody),
+        protectedAttachments,
+        video,
         createdAt,
       },
     });
@@ -577,6 +659,109 @@ export async function createEncryptedForumComment(
     }).catch(() => undefined);
     throw error;
   }
+}
+
+export async function createForumKeyGrant(
+  agent: Agent,
+  input: {
+    board: StrongRef;
+    grantId: string;
+    sessionKeyHash: string;
+    certificateHash: string;
+    epochFrom: string;
+    epochTo: string;
+    expiresAt: string;
+    enc: string;
+    ciphertext: string;
+    keyCommitment: string;
+    createdAt?: string;
+  },
+) {
+  const repoAgent = requireRepoAgent(agent);
+  const record: CreatonForumKeyGrantRecord = {
+    $type: CREATON_FORUM_KEY_GRANT_COLLECTION,
+    board: input.board,
+    grantId: input.grantId,
+    sessionKeyHash: { $bytes: input.sessionKeyHash },
+    certificateHash: { $bytes: input.certificateHash },
+    epochFrom: input.epochFrom,
+    epochTo: input.epochTo,
+    expiresAt: input.expiresAt,
+    version: 2,
+    suite: "DHKEM-P256-HKDF-SHA256/HKDF-SHA256/AES-256-GCM",
+    enc: { $bytes: input.enc },
+    ciphertext: { $bytes: input.ciphertext },
+    keyCommitment: { $bytes: input.keyCommitment },
+    createdAt: input.createdAt ?? new Date().toISOString(),
+  };
+  return createRecord<CreatonForumKeyGrantRecord>(repoAgent, {
+    collection: CREATON_FORUM_KEY_GRANT_COLLECTION,
+    record,
+  });
+}
+
+export async function listForumKeyGrants(
+  agent: Agent,
+  input: { board: StrongRef },
+): Promise<ForumRecord<CreatonForumKeyGrantRecord>[]> {
+  if (!agent.did) throw new Error("ATProto authentication is required.");
+  const repoAgent = requireRepoAgent(agent);
+  if (!repoAgent.com.atproto.repo.listRecords) {
+    throw new Error("This session cannot list forum records.");
+  }
+  const response = await repoAgent.com.atproto.repo.listRecords({
+    repo: repoAgent.did!,
+    collection: CREATON_FORUM_KEY_GRANT_COLLECTION,
+    limit: 100,
+  });
+  return (response.data.records as { uri: string; cid: string; value: CreatonForumKeyGrantRecord }[])
+    .filter((record) => record.value.board?.uri === input.board.uri)
+    .map((record) => ({ uri: record.uri, cid: record.cid, value: record.value }));
+}
+
+export async function requestForumKeyRelease(input: {
+  issuerEndpoint: string;
+  boardUri: string;
+  epochFrom: string;
+  epochTo: string;
+  committeeEpoch: number;
+  eligibilityBlock: string;
+  certificate: unknown;
+  authToken: string;
+}) {
+  const endpoint = new URL("/xrpc/app.creaton.forum.requestKeyRelease", input.issuerEndpoint);
+  const response = await fetch(endpoint.toString(), {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${input.authToken}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      boardUri: input.boardUri,
+      epochFrom: input.epochFrom,
+      epochTo: input.epochTo,
+      committeeEpoch: input.committeeEpoch,
+      eligibilityBlock: input.eligibilityBlock,
+      certificate: input.certificate,
+    }),
+  });
+  if (!response.ok) {
+    const body = await response.text().catch(() => `HTTP ${response.status}`);
+    throw new Error(`Forum key release request failed: ${body}`);
+  }
+  return response.json() as Promise<{
+    receipt: {
+      requestId: string;
+      requestHash: string;
+      boardUri: string;
+      subjectHash: string;
+      committeeEpoch: number;
+      eligibilityBlock: string;
+      policyHash: string;
+      expiresAt: string;
+    };
+    shares: unknown[];
+  }>;
 }
 
 export async function updateForumTopicState(
@@ -1617,7 +1802,7 @@ export async function listSubscribedForumBoards({
         did: parsed.did,
         rkey: parsed.rkey,
         slingshoturl,
-      }).catch(() => null);
+      });
     }),
   );
   return boards.filter((board): board is ForumRecord<CreatonForumBoardRecord> => !!board);
@@ -1731,6 +1916,27 @@ function bytesToHex(value: Uint8Array): string {
   return `0x${Array.from(value, byte => byte.toString(16).padStart(2, "0")).join("")}`;
 }
 
+export async function policyHashForBoardAccess(
+  access?: CreatonForumBoardRecord["access"],
+): Promise<string> {
+  if (!access) {
+    return `0x${"00".repeat(32)}`;
+  }
+  const encoder = new TextEncoder();
+  const canonical = JSON.stringify({
+    issuerDid: access.issuerDid,
+    committeeRegistry: access.committeeRegistry,
+    entitlementRegistry: access.entitlementRegistry,
+    paymentProtocol: access.paymentProtocol,
+    amount: access.amount,
+    durationSeconds: access.durationSeconds,
+  });
+  const digest = await crypto.subtle.digest("SHA-256", encoder.encode(canonical));
+  return `0x${Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("")}`;
+}
+
 function toBytesField(value: string | Uint8Array) {
   return { $bytes: typeof value === 'string' ? value : bytesToBase64Url(value) };
 }
@@ -1758,7 +1964,7 @@ async function getRecord<T>({
   collection: string;
   rkey: string;
   slingshoturl?: string;
-}) {
+}): Promise<ForumRecord<T> | null> {
   const atUri = `at://${repo}/${collection}/${rkey}`;
   const uriParams = new URLSearchParams({ at_uri: atUri });
   const host = slingshoturl || "slingshot.microcosm.blue";
@@ -1766,7 +1972,29 @@ async function getRecord<T>({
     serviceUrl(host, `/xrpc/com.bad-example.repo.getUriRecord?${uriParams.toString()}`),
   );
   if (response.ok) return response.json() as Promise<ForumRecord<T>>;
-  throw new Error(`Failed to load record from Slingshot: ${response.status}`);
+
+  if (response.status === 400 || response.status === 404 || response.status === 500) {
+    return null;
+  }
+
+  let data: unknown;
+  try {
+    data = await response.json();
+  } catch {
+    return null;
+  }
+
+  if (
+    data &&
+    typeof data === "object" &&
+    "error" in data &&
+    (data as { error?: string }).error === "InvalidRequest" &&
+    String((data as { message?: string }).message ?? "").includes("Could not find repo")
+  ) {
+    return null;
+  }
+
+  return null;
 }
 
 async function listRemoteRecordsForSubject<T>({
@@ -1795,7 +2023,7 @@ async function listRemoteRecordsForSubject<T>({
         collection: record.collection,
         rkey: record.rkey,
         slingshoturl,
-      }).catch(() => null),
+      }),
     ),
   );
   return fetched.filter((record): record is ForumRecord<T> => !!record);

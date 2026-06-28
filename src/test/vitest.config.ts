@@ -16,6 +16,11 @@ export default defineConfig({
       'packages/forum-core/src/forumSort.test.ts',
       'packages/forum-core/src/forumReplies.test.ts',
       'packages/forum-core/src/forumPermissions.test.ts',
+      'packages/forum-core/src/crypto/forumContentCrypto.test.ts',
+      'packages/forum-core/src/forumRepository.test.ts',
+      'packages/forum-core/src/video/videoBlobUtils.test.ts',
+      'packages/forum-core/src/crypto/forumVideoCrypto.test.ts',
+      'src/features/forums/video/forumVideoLimits.test.ts',
     ],
     outputFile: {
       json: 'src/test/unit/.output/results.json',

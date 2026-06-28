@@ -1,20 +1,17 @@
 import { createPublicClient, getAddress, http, type Address, type Hex } from 'viem'
-import { abstract, abstractTestnet, arbitrum, base, mainnet, optimism } from 'viem/chains'
 import { createSiweMessage } from 'viem/siwe'
+
+import {
+  configuredTempoChainId,
+  SUPPORTED_WALLET_CHAINS,
+} from '~/features/wallets/chains'
 
 export const ADDRESS_CONTROL_LEXICON = 'com.creaton.evm.addressControl'
 
 export type EvmAddressString = `0x${string}`
 export type DidString = `did:plc:${string}` | `did:web:${string}`
 
-export const SUPPORTED_CHAINS = [
-  { id: 2741, label: 'Abstract', chain: abstract },
-  { id: 11124, label: 'Abstract Testnet', chain: abstractTestnet },
-  { id: 1, label: 'Ethereum', chain: mainnet },
-  { id: 8453, label: 'Base', chain: base },
-  { id: 10, label: 'Optimism', chain: optimism },
-  { id: 42161, label: 'Arbitrum', chain: arbitrum },
-] as const
+export const SUPPORTED_CHAINS = SUPPORTED_WALLET_CHAINS
 
 export type SupportedChainId = (typeof SUPPORTED_CHAINS)[number]['id']
 
@@ -48,7 +45,8 @@ type DescribeServerResponse = {
   availableUserDomains?: string[]
 }
 
-export const defaultPrimaryChainId = import.meta.env.DEV ? 11124 : 2741
+/** Default chain for SIWE login, registration, and wallet linking. */
+export const defaultPrimaryChainId = configuredTempoChainId()
 export const defaultSiweUserDomain = import.meta.env.DEV ? '.test' : '.creaton.social'
 
 export function isSupportedChainId(chainId: number | undefined): chainId is SupportedChainId {
@@ -215,7 +213,7 @@ export function linkedWalletFromRecord(record: {
   return {
     uri: record.uri,
     address: toChecksumAddress(address),
-    primaryChainId: record.value.siwe?.chainId ?? 1,
+    primaryChainId: record.value.siwe?.chainId ?? defaultPrimaryChainId,
     alsoOn: record.value.alsoOn ?? [],
   }
 }

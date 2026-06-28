@@ -1,17 +1,18 @@
 import { useAbstractClient } from '@abstract-foundation/agw-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useAccount } from 'wagmi'
 
 import type { CreatonForumAccessPolicy, CreatonForumBoardRecord } from '@creaton/forum-core'
 
+import {
+  loadForumBoardEntitlement,
+  type ForumBoardEntitlement,
+} from '~/features/forums/crypto/forumBoardEntitlementStorage'
 import { loadForumAccessSession } from '~/features/forums/crypto/forumAccessSession'
 import { isProductionForumCrypto } from '~/features/forums/crypto/forumCryptoMode'
 import { useAuth } from '~/providers/UnifiedAuthProvider'
 
-export type ForumBoardEntitlement = {
-  validFrom: string
-  validUntil: string
-  paymentRef: string | null
-}
+export type { ForumBoardEntitlement }
 
 export function forumBoardAccessQueryKey(boardUri: string, did?: string | null) {
   return ['forum-board-access', boardUri, did ?? 'signed-out'] as const
@@ -32,15 +33,18 @@ export function useForumBoardAccess(input: {
 }) {
   const { agent } = useAuth()
   const { data: abstractClient } = useAbstractClient()
+  const { address: tempoAddress } = useAccount()
   const access = input.boardRecord?.access
   const requiresEntitlement =
     input.boardRecord?.postingMode === 'encrypted' || input.boardRecord?.postingMode === 'mixed'
+  const isTempoBoard = access?.paymentProtocol === 'tempo'
+  const walletAddress = isTempoBoard ? tempoAddress : abstractClient?.account.address
 
   return useQuery({
     queryKey: forumBoardAccessQueryKey(input.boardUri, agent?.did),
     queryFn: async (): Promise<ForumBoardEntitlement | null> => {
       if (!requiresEntitlement || !access) return null
-      if (!agent?.did || !abstractClient) return null
+      if (!agent?.did || !walletAddress) return null
       if (!isProductionForumCrypto()) {
         return {
           validFrom: new Date(0).toISOString(),
@@ -48,13 +52,25 @@ export function useForumBoardAccess(input: {
           paymentRef: null,
         }
       }
+
+      const storedEntitlement = await loadForumBoardEntitlement({
+        did: agent.did,
+        boardUri: input.boardUri,
+      })
+      if (storedEntitlement && hasActiveForumEntitlement(storedEntitlement, access)) {
+        return storedEntitlement
+      }
+
       const session = await loadForumAccessSession({
         did: agent.did,
         boardUri: input.boardUri,
-        account: abstractClient.account.address,
+        account: walletAddress,
         issuer: access.issuerDid,
       })
       if (!session) return null
+
+      if (isTempoBoard) return null
+
       return {
         validFrom: new Date(session.issuedAt).toISOString(),
         validUntil: new Date(session.expiresAt).toISOString(),

@@ -4,6 +4,7 @@ import type { WalletClient } from 'viem'
 import type { CreatonForumAccessPolicy } from '@creaton/forum-core'
 
 import { createSignedForumAccessSession } from '~/features/forums/crypto/forumAccessClient'
+import { saveForumBoardEntitlement } from '~/features/forums/crypto/forumBoardEntitlementStorage'
 import type { ForumAccessSession } from '~/features/forums/crypto/forumAccessSession'
 import { fetchWithTempoMppSubscription } from '~/features/forums/crypto/tempoMppSubscription'
 import type { Hex } from 'viem'
@@ -84,6 +85,13 @@ export async function activateCreatorBoardSubscription(input: {
     throw new Error(
       body?.message || body?.error || `Creator subscription activation failed (${response.status}).`,
     )
+  }
+  if (input.agent.did) {
+    await saveForumBoardEntitlement({
+      did: input.agent.did,
+      boardUri: input.boardUri,
+      entitlement: body.entitlement,
+    })
   }
   return { entitlement: body.entitlement }
 }

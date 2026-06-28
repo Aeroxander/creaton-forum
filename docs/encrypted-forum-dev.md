@@ -113,6 +113,8 @@ bun dev
 | `VITE_FORUM_POSTER_REWARD_VAULT` | Community board MPP pay-to |
 | `VITE_FORUM_ISSUER_DID` | AppView issuer DID |
 | `VITE_ABSTRACT_CHAIN_ID` | Abstract chain ID (2741 mainnet, 11124 testnet; local Anvil uses 31337) |
+| `VITE_TEMPO_CHAIN_ID` | Tempo chain ID (4217 mainnet, 42429 testnet) for creator-board subscriptions |
+| `VITE_TEMPO_PATHUSD_ADDRESS` | PathUSD contract on Tempo for MPP subscription payments |
 
 ## Logos storage
 

@@ -1,0 +1,63 @@
+{
+  "lexicon": 1,
+  "id": "app.creaton.forum.confirmBoardPayment",
+  "defs": {
+    "main": {
+      "type": "procedure",
+      "description": "Confirms a Tempo MPP subscription or Abstract board payment and returns a protected-board entitlement.",
+      "input": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["boardUri", "certificate"],
+          "properties": {
+            "boardUri": { "type": "string", "format": "at-uri" },
+            "txHash": {
+              "type": "string",
+              "maxLength": 66,
+              "description": "Abstract USDC transfer transaction hash for legacy direct-payment confirmation."
+            },
+            "certificate": {
+              "type": "ref",
+              "ref": "app.creaton.forum.requestKeyRelease#sessionCertificate"
+            }
+          }
+        }
+      },
+      "output": {
+        "encoding": "application/json",
+        "schema": {
+          "type": "object",
+          "required": ["entitlement"],
+          "properties": {
+            "entitlement": {
+              "type": "ref",
+              "ref": "app.creaton.forum.confirmBoardPayment#entitlement"
+            }
+          }
+        }
+      },
+      "errors": [
+        { "name": "AuthenticationRequired" },
+        { "name": "IdentityMismatch" },
+        { "name": "PaymentFailed" },
+        { "name": "PolicyMismatch" },
+        { "name": "InvalidAccessCertificate" }
+      ]
+    },
+    "entitlement": {
+      "type": "object",
+      "required": ["validFrom", "validUntil", "paymentRef"],
+      "properties": {
+        "validFrom": { "type": "string", "format": "datetime" },
+        "validUntil": { "type": "string", "format": "datetime" },
+        "paymentRef": {
+          "type": "string",
+          "nullable": true,
+          "maxLength": 256,
+          "description": "Tempo MPP payment reference or Abstract transaction hash."
+        }
+      }
+    }
+  }
+}

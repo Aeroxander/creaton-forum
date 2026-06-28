@@ -1,21 +1,15 @@
 import type { WalletClient } from 'viem'
 
 import {
-  parseMppChallenge,
+  parseTempoMppSubscriptionChallenge,
+  type TempoMppSubscriptionChallenge,
+} from '~/features/forums/crypto/mppChallenge'
+import {
   serializeMppCredential,
   TRANSFER_WITH_AUTHORIZATION_TYPES,
 } from '~/features/forums/crypto/abstractMppCharge'
-import { base64UrlToBytes, bytesToBase64Url, canonicalJson } from '~/features/forums/crypto/sarmaV2'
 
-export type TempoMppSubscriptionChallenge = ReturnType<typeof parseTempoMppSubscriptionChallenge>
-
-export function parseTempoMppSubscriptionChallenge(header: string) {
-  const challenge = parseMppChallenge(header)
-  if (challenge.method !== 'tempo' || challenge.intent !== 'subscription') {
-    throw new Error('Unsupported MPP challenge; expected a Tempo subscription.')
-  }
-  return challenge
-}
+export type { TempoMppSubscriptionChallenge }
 
 export async function createTempoMppSubscriptionCredential(input: {
   walletClient: WalletClient

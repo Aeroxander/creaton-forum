@@ -30,3 +30,7 @@ export function needsUsdcFunding(
   if (balance === undefined) return true
   return balance < required
 }
+
+export function isInsufficientTokenError(message: string): boolean {
+  return /insufficient|exceeds balance|transfer amount exceeds|not enough|funds/i.test(message)
+}

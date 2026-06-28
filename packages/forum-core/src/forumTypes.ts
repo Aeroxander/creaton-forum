@@ -48,8 +48,8 @@ export type CreatonForumAccessPolicy = {
   kind: "protected";
   issuerDid: string;
   issuerEndpoint: string;
-  paymentProtocol: "mpp" | "tempo";
-  chainId: 2741 | 11124 | 4217 | 42429;
+  paymentProtocol: "tempo";
+  chainId: 4217 | 42429;
   asset: string;
   amount: string;
   durationSeconds: number;

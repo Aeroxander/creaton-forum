@@ -1,4 +1,3 @@
-import { useGlobalWalletSignerClient } from '@abstract-foundation/agw-react'
 import { useMemo, useState } from 'react'
 import { Checkbox, Label, SizableText, XStack, YStack } from 'tamagui'
 import { type Hex } from 'viem'
@@ -30,13 +29,12 @@ import {
 } from './siwe'
 
 export function WalletLinkPanel({ did }: { did: string | undefined }) {
-  const { address, chain, connector, isConnected, status } = useAccount()
+  const { address, chain, isConnected, status } = useAccount()
   const { data: balance } = useBalance({ address })
   const { connect, connectors, isPending: isConnectPending } = useConnect()
   const { disconnect } = useDisconnect()
   const { switchChain, isPending: isSwitchPending } = useSwitchChain()
   const { signMessageAsync } = useSignMessage()
-  const { data: abstractSignerClient } = useGlobalWalletSignerClient()
   const wallets = useLinkedWalletsQuery(did)
   const createWallet = useCreateLinkedWalletMutation(did)
 
@@ -46,7 +44,6 @@ export function WalletLinkPanel({ did }: { did: string | undefined }) {
   const [alsoOn, setAlsoOn] = useState<Set<number>>(() => new Set())
   const [error, setError] = useState<string | null>(null)
 
-  const isAbstractConnector = connector?.id === 'xyz.abs.privy'
   const signingAddress = address
   const isWalletConnecting = status === 'connecting' || isConnectPending
   const isBusy = isWalletConnecting || isSwitchPending || createWallet.isPending
@@ -62,25 +59,9 @@ export function WalletLinkPanel({ did }: { did: string | undefined }) {
     ? `${Number.parseFloat(balance.formatted).toFixed(4)} ${balance.symbol}`
     : undefined
 
-  const connectInjected = () => {
+  const connectWallet = () => {
     setError(null)
     connect({ connector: injected(), chainId: defaultPrimaryChainId })
-  }
-
-  const connectAbstract = () => {
-    setError(null)
-    const abstractConnector = connectors.find((item) => item.id === 'xyz.abs.privy')
-    if (!abstractConnector) {
-      setError('Abstract wallet connector is not available in this browser.')
-      return
-    }
-    connect(
-      { connector: abstractConnector },
-      {
-        onError: (err) =>
-          setError(err instanceof Error ? err.message : 'Failed to connect Abstract wallet'),
-      },
-    )
   }
 
   const linkWallet = async () => {
@@ -103,15 +84,7 @@ export function WalletLinkPanel({ did }: { did: string | undefined }) {
 
     setError(null)
     try {
-      let signature: Hex
-      if (isAbstractConnector) {
-        if (!abstractSignerClient) {
-          throw new Error('Abstract signer is not ready. Try again in a moment.')
-        }
-        signature = await abstractSignerClient.signMessage({ message })
-      } else {
-        signature = await signMessageAsync({ message })
-      }
+      const signature: Hex = await signMessageAsync({ message })
 
       try {
         await verifyWalletLinkSignature({
@@ -153,19 +126,14 @@ export function WalletLinkPanel({ did }: { did: string | undefined }) {
           Creaton wallet
         </SizableText>
         <SizableText size="$2" opacity={0.7}>
-          Link an EVM wallet to your ATProto account for Creaton features.
+          Link a Tempo wallet to your ATProto account for Creaton features.
         </SizableText>
       </YStack>
 
       {!isConnected ? (
-        <YStack gap="$2">
-          <Button theme="blue" onPress={connectInjected} disabled={isBusy || connectors.length === 0}>
-            Connect {getChainLabel(defaultPrimaryChainId)} wallet
-          </Button>
-          <Button variant="outlined" onPress={connectAbstract} disabled={isBusy}>
-            Connect with Abstract
-          </Button>
-        </YStack>
+        <Button theme="blue" onPress={connectWallet} disabled={isBusy || connectors.length === 0}>
+          Connect {getChainLabel(defaultPrimaryChainId)} wallet
+        </Button>
       ) : (
         <YStack gap="$4">
           <YStack gap="$1" bg="$color3" rounded="$4" p="$3">
@@ -173,7 +141,7 @@ export function WalletLinkPanel({ did }: { did: string | undefined }) {
               <YStack>
                 <SizableText size="$3" fontWeight="500">
                   {formatShortAddress(address ?? '')}
-                  {isAbstractConnector ? ' · Abstract' : chain ? ` · ${chain.name}` : ''}
+                  {chain ? ` · ${chain.name}` : ''}
                 </SizableText>
                 {formattedBalance ? (
                   <SizableText size="$1" opacity={0.6}>

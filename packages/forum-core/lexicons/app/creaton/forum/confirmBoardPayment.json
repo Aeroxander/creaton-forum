@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "procedure",
-      "description": "Confirms a Tempo MPP subscription or Abstract board payment and returns a protected-board entitlement.",
+      "description": "Confirms a Tempo MPP subscription and returns a protected-board entitlement.",
       "input": {
         "encoding": "application/json",
         "schema": {
@@ -12,11 +12,6 @@
           "required": ["boardUri", "certificate"],
           "properties": {
             "boardUri": { "type": "string", "format": "at-uri" },
-            "txHash": {
-              "type": "string",
-              "maxLength": 66,
-              "description": "Abstract USDC transfer transaction hash for legacy direct-payment confirmation."
-            },
             "certificate": {
               "type": "ref",
               "ref": "app.creaton.forum.requestKeyRelease#sessionCertificate"
@@ -55,7 +50,7 @@
           "type": "string",
           "nullable": true,
           "maxLength": 256,
-          "description": "Tempo MPP payment reference or Abstract transaction hash."
+          "description": "Tempo MPP payment reference."
         }
       }
     }

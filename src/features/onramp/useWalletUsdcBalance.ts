@@ -1,8 +1,8 @@
 import { useAccount, useReadContract } from 'wagmi'
 import { erc20Abi } from 'viem'
 
-function getForumUsdcAddress(): `0x${string}` | undefined {
-  const address = import.meta.env.VITE_FORUM_USDC_ADDRESS
+function getPathUsdAddress(): `0x${string}` | undefined {
+  const address = import.meta.env.VITE_TEMPO_PATHUSD_ADDRESS
   if (!address || !/^0x[0-9a-fA-F]{40}$/.test(address)) return undefined
   return address as `0x${string}`
 }
@@ -12,7 +12,7 @@ export function useWalletUsdcBalance(input?: {
   chainId?: number
 }) {
   const { address, isConnected } = useAccount()
-  const tokenAddress = input?.tokenAddress ?? getForumUsdcAddress()
+  const tokenAddress = input?.tokenAddress ?? getPathUsdAddress()
   const query = useReadContract({
     address: tokenAddress,
     abi: erc20Abi,

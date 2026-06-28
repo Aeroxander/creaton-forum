@@ -21,7 +21,7 @@
             "eligibilityBlock": {
               "type": "string",
               "maxLength": 78,
-              "description": "Finalized Abstract block number encoded as a base-10 string."
+              "description": "Finalized EVM block number encoded as a base-10 string."
             },
             "certificate": {
               "type": "ref",

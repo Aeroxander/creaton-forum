@@ -10,19 +10,6 @@ import { createLogger } from 'vite'
 
 const rootDir = import.meta.dirname
 
-const agwReact = resolve(
-  rootDir,
-  'node_modules/@abstract-foundation/agw-react/dist/esm/exports/index.js',
-)
-const agwConnectors = resolve(
-  rootDir,
-  'node_modules/@abstract-foundation/agw-react/dist/esm/exports/connectors.js',
-)
-const agwPrivy = resolve(
-  rootDir,
-  'node_modules/@abstract-foundation/agw-react/dist/esm/exports/privy.js',
-)
-
 function solanaBrowserAliases(): Record<string, string> {
   const solanaDir = resolve(rootDir, 'node_modules/@solana')
   if (!existsSync(solanaDir)) return {}
@@ -64,10 +51,6 @@ const crossmintImportAliases = {
 } as const
 
 const walletOptimizeDepsExclude = [
-  '@abstract-foundation/agw-client',
-  '@abstract-foundation/agw-react',
-  '@privy-io/react-auth',
-  '@privy-io/cross-app-connect',
   // vxrn misreads package.json "import" export conditions as subpaths.
   '@crossmint/client-sdk-react-ui/import',
   '@crossmint/client-sdk-react-base/import',
@@ -78,7 +61,6 @@ const walletOptimizeDepsInclude = [
   'buffer',
   'eventemitter3',
   'fflate',
-  '@abstract-foundation/agw-react/connectors',
   'wagmi',
   '@wagmi/core',
   '@wagmi/connectors',
@@ -88,10 +70,6 @@ const walletOptimizeDepsInclude = [
 ] as const
 
 const ssrWalletExternal = [
-  '@abstract-foundation/agw-client',
-  '@abstract-foundation/agw-react',
-  '@privy-io/cross-app-connect',
-  '@privy-io/react-auth',
   '@wagmi/connectors',
   '@wagmi/core',
   'viem',
@@ -102,9 +80,6 @@ const ssrWalletExternal = [
 const walletResolveAliases = {
   'rpc-websockets': rpcWebsocketsBrowser,
   eventemitter3,
-  '@abstract-foundation/agw-react/connectors': agwConnectors,
-  '@abstract-foundation/agw-react/privy': agwPrivy,
-  '@abstract-foundation/agw-react': agwReact,
   ...crossmintImportAliases,
   ...solanaAliases,
 }

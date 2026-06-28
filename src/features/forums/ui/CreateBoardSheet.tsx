@@ -21,7 +21,6 @@ const POSTING_MODES: Array<{ value: PostingMode; label: string }> = [
 ]
 
 function protectedAccessPolicy(input: {
-  paymentProtocol: 'mpp' | 'tempo'
   payTo: string
   price: string
   durationDays: string
@@ -37,16 +36,13 @@ function protectedAccessPolicy(input: {
   if (!Number.isInteger(days) || days < 1 || days > 3650) {
     throw new Error('Access duration must be 1–3650 days.')
   }
-  const isTempo = input.paymentProtocol === 'tempo'
   return {
     kind: 'protected' as const,
     issuerDid: required('VITE_FORUM_ISSUER_DID'),
     issuerEndpoint: required('VITE_CREATON_FORUM_APPVIEW_URL'),
-    paymentProtocol: input.paymentProtocol,
-    chainId: Number(
-      required(isTempo ? 'VITE_TEMPO_CHAIN_ID' : 'VITE_ABSTRACT_CHAIN_ID'),
-    ) as 2741 | 11124 | 4217 | 42429,
-    asset: required(isTempo ? 'VITE_TEMPO_PATHUSD_ADDRESS' : 'VITE_FORUM_USDC_ADDRESS'),
+    paymentProtocol: 'tempo' as const,
+    chainId: Number(required('VITE_TEMPO_CHAIN_ID')) as 4217 | 42429,
+    asset: required('VITE_TEMPO_PATHUSD_ADDRESS'),
     amount,
     durationSeconds: days * 86_400,
     payTo: input.payTo,
@@ -314,11 +310,10 @@ export function CreateBoardSheet({
         access:
           protectedBoard && isProductionForumCrypto()
             ? protectedAccessPolicy({
-                paymentProtocol: boardType === 'creator' ? 'tempo' : 'mpp',
                 payTo:
                   boardType === 'creator'
                     ? requiredAddressInput(creatorTreasury, 'Creator treasury')
-                    : requiredDeployment('VITE_FORUM_POSTER_REWARD_VAULT'),
+                    : requiredDeployment('VITE_TEMPO_BOARD_PAY_TO'),
                 price,
                 durationDays,
                 historyPolicy,

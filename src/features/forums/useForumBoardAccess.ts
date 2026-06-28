@@ -1,4 +1,3 @@
-import { useAbstractClient } from '@abstract-foundation/agw-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAccount } from 'wagmi'
 
@@ -8,7 +7,6 @@ import {
   loadForumBoardEntitlement,
   type ForumBoardEntitlement,
 } from '~/features/forums/crypto/forumBoardEntitlementStorage'
-import { loadForumAccessSession } from '~/features/forums/crypto/forumAccessSession'
 import { isProductionForumCrypto } from '~/features/forums/crypto/forumCryptoMode'
 import { useAuth } from '~/providers/UnifiedAuthProvider'
 
@@ -32,13 +30,10 @@ export function useForumBoardAccess(input: {
   boardRecord?: CreatonForumBoardRecord
 }) {
   const { agent } = useAuth()
-  const { data: abstractClient } = useAbstractClient()
-  const { address: tempoAddress } = useAccount()
+  const { address: walletAddress } = useAccount()
   const access = input.boardRecord?.access
   const requiresEntitlement =
     input.boardRecord?.postingMode === 'encrypted' || input.boardRecord?.postingMode === 'mixed'
-  const isTempoBoard = access?.paymentProtocol === 'tempo'
-  const walletAddress = isTempoBoard ? tempoAddress : abstractClient?.account.address
 
   return useQuery({
     queryKey: forumBoardAccessQueryKey(input.boardUri, agent?.did),
@@ -60,22 +55,7 @@ export function useForumBoardAccess(input: {
       if (storedEntitlement && hasActiveForumEntitlement(storedEntitlement, access)) {
         return storedEntitlement
       }
-
-      const session = await loadForumAccessSession({
-        did: agent.did,
-        boardUri: input.boardUri,
-        account: walletAddress,
-        issuer: access.issuerDid,
-      })
-      if (!session) return null
-
-      if (isTempoBoard) return null
-
-      return {
-        validFrom: new Date(session.issuedAt).toISOString(),
-        validUntil: new Date(session.expiresAt).toISOString(),
-        paymentRef: null,
-      }
+      return null
     },
     enabled: !!input.boardUri && (!requiresEntitlement || !!access),
     staleTime: 30_000,

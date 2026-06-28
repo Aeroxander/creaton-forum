@@ -24,7 +24,6 @@ import { ForumCommentNode, forumReplyTargetLabel } from '~/features/forums/ui/Fo
 import { ForumEmpty, ForumPage, ForumPanel, ForumSectionHeader } from '~/features/forums/ui/ForumChrome'
 import { ForumPost } from '~/features/forums/ui/ForumPost'
 import { ForumReplyBox } from '~/features/forums/ui/ForumReplyBox'
-import { CommunityBoardAccessPanel } from '~/features/onramp/CommunityBoardAccessPanel'
 import { PageContainer } from '~/interface/layout/PageContainer'
 import { useAuth } from '~/providers/UnifiedAuthProvider'
 import { isProductionForumCrypto } from '~/features/forums/crypto/forumCryptoMode'
@@ -100,7 +99,7 @@ export function ForumTopicPage() {
   const access = board.data?.value.access
 
   const fundWallet = useMemo(() => {
-    if (!access || access.paymentProtocol === 'tempo') return undefined
+    if (!access || boardAccess.hasAccess) return undefined
     return {
       did: agent?.did,
       walletAddress: wallet.address,
@@ -108,7 +107,7 @@ export function ForumTopicPage() {
       requiredAmount: access.amount,
       onFunded: () => void wallet.refetch(),
     }
-  }, [access, agent?.did, wallet.address, wallet.balance, wallet.refetch])
+  }, [access, agent?.did, boardAccess.hasAccess, wallet.address, wallet.balance, wallet.refetch])
 
   const unlockPost = useCallback(
     (input: {
@@ -273,11 +272,6 @@ export function ForumTopicPage() {
   return (
     <PageContainer>
       <ForumPage title={topicRecord.value.title}>
-        {access?.paymentProtocol === 'mpp' ? (
-          <YStack mb="$3" display="flex" $md={{ display: 'none' }}>
-            <CommunityBoardAccessPanel access={access} />
-          </YStack>
-        ) : null}
         <ForumPanel>
           <ForumSectionHeader title="Discussion" />
           <ForumPost

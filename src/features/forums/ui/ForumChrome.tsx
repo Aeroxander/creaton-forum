@@ -4,7 +4,6 @@ import { ScrollView, SizableText, XStack, YStack } from 'tamagui'
 import type { CreatonForumBoardRecord } from '@creaton/forum-core'
 
 import { BoardSubscribePanel } from '~/features/onramp/BoardSubscribePanel'
-import { CommunityBoardAccessPanel } from '~/features/onramp/CommunityBoardAccessPanel'
 import { Button } from '~/interface/buttons/Button'
 
 const FORUM_STORY_SKELETONS = ['one', 'two', 'three', 'four', 'five', 'six']
@@ -309,15 +308,13 @@ export function ForumBoardSideMenu({
         </YStack>
       </XStack>
 
-      {encrypted && boardUri && access?.paymentProtocol === 'tempo' ? (
+      {encrypted && boardUri && access ? (
         <BoardSubscribePanel
           boardUri={boardUri}
           access={access}
           supportLabel={supportLabel}
           onSubscribed={onSubscribed}
         />
-      ) : encrypted && access?.paymentProtocol === 'mpp' ? (
-        <CommunityBoardAccessPanel access={access} />
       ) : encrypted ? (
         <YStack
           p="$3"

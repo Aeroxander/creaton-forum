@@ -7,14 +7,13 @@ import {
 import {
   serializeMppCredential,
   TRANSFER_WITH_AUTHORIZATION_TYPES,
-} from '~/features/forums/crypto/abstractMppCharge'
+} from '~/features/forums/crypto/mppCredential'
 
 export type { TempoMppSubscriptionChallenge }
 
 export async function createTempoMppSubscriptionCredential(input: {
   walletClient: WalletClient
   challenge: TempoMppSubscriptionChallenge
-  rpcUrl?: string
   now?: number
   nonce?: `0x${string}`
 }): Promise<string> {

@@ -1,4 +1,4 @@
-import { abstract, abstractTestnet, arbitrum, base, mainnet, optimism } from 'viem/chains'
+import { arbitrum, base, mainnet, optimism } from 'viem/chains'
 
 export const tempoMainnet = {
   id: 4217,
@@ -26,8 +26,6 @@ export function configuredTempoChainId(): number {
 export const SUPPORTED_WALLET_CHAINS = [
   { id: tempoMainnet.id, label: 'Tempo', chain: tempoMainnet },
   { id: tempoTestnet.id, label: 'Tempo Testnet', chain: tempoTestnet },
-  { id: 2741, label: 'Abstract', chain: abstract },
-  { id: 11124, label: 'Abstract Testnet', chain: abstractTestnet },
   { id: 1, label: 'Ethereum', chain: mainnet },
   { id: 8453, label: 'Base', chain: base },
   { id: 10, label: 'Optimism', chain: optimism },

@@ -10,7 +10,6 @@ import {
   type CreatonForumTopicRecord,
 } from '@creaton/forum-core'
 
-import { isProductionForumCrypto } from '~/features/forums/crypto/forumCryptoMode'
 import {
   classifyForumDecryptionError,
   useDecryptedForumBody,
@@ -91,9 +90,6 @@ export function ForumPost({
   const protectedAttachments =
     'protectedAttachments' in record.value ? record.value.protectedAttachments : undefined
 
-  const isMppUnlock =
-    isProductionForumCrypto() && access?.paymentProtocol === 'mpp' && !!protectedBody
-
   const decrypted = useDecryptedForumBody({
     protectedBody,
     boardUri,
@@ -102,7 +98,7 @@ export function ForumPost({
     access,
     hasBoardAccess,
     participantIds,
-    enabled: !isMppUnlock && decryptedBody === undefined,
+    enabled: decryptedBody === undefined,
   })
 
   const decryptErrorKind =
@@ -203,12 +199,11 @@ export function ForumPost({
       ) : null}
 
       {showProtectedPlaceholder ? (
-        isMppUnlock || onUnlock ? (
+        onUnlock ? (
           <ProtectedForumBody
             fundWallet={fundWallet}
             onUnlock={onUnlock}
             unlocking={unlocking || decrypted.isLoading}
-            paymentProtocol={access?.paymentProtocol}
           />
         ) : (
           <SizableText size="$3" opacity={0.7}>
@@ -217,7 +212,7 @@ export function ForumPost({
               : decryptErrorKind === 'subscribe'
                 ? '[Encrypted content — subscribe on the board page to unlock]'
                 : decryptErrorKind === 'funding'
-                  ? '[Encrypted content — add USDC to your wallet to unlock]'
+                  ? '[Encrypted content — add PathUSD to your wallet to unlock]'
                   : '[Encrypted content — subscribe to unlock]'}
           </SizableText>
         )

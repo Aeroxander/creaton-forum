@@ -63,8 +63,6 @@
     "@noble/hashes": "1.8.0"
   },
   "dependencies": {
-    "@abstract-foundation/agw-client": "^1.12.3",
-    "@abstract-foundation/agw-react": "^1.13.0",
     "@atproto/api": "^0.18.20",
     "@atproto/oauth-client-browser": "^0.3.33",
     "@creaton/forum-core": "file:./packages/forum-core",

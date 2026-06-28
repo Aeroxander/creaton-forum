@@ -52,7 +52,7 @@ This is **not** a Commonware L2 devnet. The stack has two layers:
 
 | Layer | What runs | Role |
 |-------|-----------|------|
-| **EVM** | Anvil on `:8545` | Local Abstract-compatible chain for USDC, committee registry, entitlements |
+| **EVM** | Anvil on `:8545` | Local EVM for PathUSD mocks, committee registry, entitlements |
 | **KMS** | 15 × `creaton-kms` | Commonware Golden threshold DKG + HTTP/P2P operators that release key shares |
 
 Commonware here is **cryptography and operator networking**, not the chain itself. Golden DKG is the ceremony that produces the committee's threshold public key; Anvil holds the on-chain registry that records which operators were elected.
@@ -72,10 +72,10 @@ FORUM_SERVICE_DID=did:web:example.test \
 
 Creates `.dev/encrypted-forum/` and:
 
-1. Starts Anvil (local Abstract-compatible RPC — not Base L2)
-2. Deploys CREATE/USDC mocks and KMS contracts from `../creaton-sc`
+1. Starts Anvil (local EVM for PathUSD mocks, committee registry, entitlements)
+2. Deploys CREATE/PathUSD mocks and KMS contracts from `../creaton-sc`
 3. Generates 15 Commonware operator identities
-4. Starts 15 `creaton-kms` operators (Abstract RPC via `CREATON_KMS_ABSTRACT_RPC_URL`) and finalizes Golden DKG
+4. Starts 15 `creaton-kms` operators (local EVM via `CREATON_KMS_ABSTRACT_RPC_URL`) and finalizes Golden DKG
 5. Writes:
    - `.dev/encrypted-forum/forum-appview.env`
    - `.dev/encrypted-forum/creaton-forum.env`
@@ -106,15 +106,13 @@ bun dev
 | `VITE_FORUM_CRYPTO_MODE` | `dev` or `production` |
 | `VITE_DKG_SERVICE_URL` | Dev-only local DKG (`dev` mode) |
 | `VITE_FORUM_STORAGE_URL` | forum-storage sidecar (Logos upload/fetch) |
-| `VITE_FORUM_USDC_ADDRESS` | USDC contract |
+| `VITE_TEMPO_CHAIN_ID` | Tempo chain ID (4217 mainnet, 42429 testnet; local Anvil uses 42429 in dev env) |
+| `VITE_TEMPO_PATHUSD_ADDRESS` | PathUSD contract |
+| `VITE_TEMPO_BOARD_PAY_TO` | Default pay-to address for community protected boards |
 | `VITE_FORUM_REVENUE_ROUTER` | Revenue router |
 | `VITE_FORUM_COMMITTEE_REGISTRY` | KMS committee registry |
 | `VITE_FORUM_ENTITLEMENT_REGISTRY` | Entitlement registry |
-| `VITE_FORUM_POSTER_REWARD_VAULT` | Community board MPP pay-to |
 | `VITE_FORUM_ISSUER_DID` | AppView issuer DID |
-| `VITE_ABSTRACT_CHAIN_ID` | Abstract chain ID (2741 mainnet, 11124 testnet; local Anvil uses 31337) |
-| `VITE_TEMPO_CHAIN_ID` | Tempo chain ID (4217 mainnet, 42429 testnet) for creator-board subscriptions |
-| `VITE_TEMPO_PATHUSD_ADDRESS` | PathUSD contract on Tempo for MPP subscription payments |
 
 ## Logos storage
 

@@ -5,17 +5,17 @@ import {
   type CreatonForumEncryptedContentV3,
 } from '@creaton/forum-core'
 
-import { isInsufficientUsdcError } from '~/features/forums/crypto/forumBoardPayment'
 import { isProductionForumCrypto } from '~/features/forums/crypto/forumCryptoMode'
 import { useForumUnlock } from '~/features/forums/useForumUnlock'
 import { useForumConfig } from '~/features/forums/useForumQueries'
 import { getForumKeyCapsule } from '@creaton/forum-core'
+import { isInsufficientTokenError } from '~/features/onramp/usdcAmount'
 
 export type ForumDecryptionErrorKind = 'subscribe' | 'funding' | 'generic'
 
 export function classifyForumDecryptionError(message: string): ForumDecryptionErrorKind {
   if (/402|payment|required|entitlement|subscribe/i.test(message)) return 'subscribe'
-  if (isInsufficientUsdcError(message)) return 'funding'
+  if (isInsufficientTokenError(message)) return 'funding'
   return 'generic'
 }
 
@@ -32,15 +32,13 @@ export function useDecryptedForumBody(input: {
   const { slingshoturl } = useForumConfig()
   const { unlock, isProduction } = useForumUnlock(input.boardUri ?? '')
 
-  const isMpp = isProduction && input.access?.paymentProtocol === 'mpp'
   const productionEnabled =
     isProduction &&
-    !isMpp &&
     !!input.protectedBody &&
     !!input.boardUri &&
     !!input.recordUri &&
     !!input.access &&
-    (input.access.paymentProtocol !== 'tempo' || input.hasBoardAccess !== false)
+    input.hasBoardAccess !== false
 
   const devEnabled =
     !isProduction &&

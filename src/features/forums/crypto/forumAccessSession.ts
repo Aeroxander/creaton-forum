@@ -1,6 +1,7 @@
 import { del, get, set } from 'idb-keyval'
 import type { Address, Hex } from 'viem'
 
+import { configuredTempoChainId } from '~/features/wallets/chains'
 import {
   base64UrlToBytes,
   bytesToBase64Url,
@@ -71,7 +72,10 @@ export async function createForumAccessSession(input: {
   }
 }
 
-export function forumAccessSessionTypedData(session: ForumAccessSession, chainId = 2741) {
+export function forumAccessSessionTypedData(
+  session: ForumAccessSession,
+  chainId = configuredTempoChainId(),
+) {
   return {
     domain: {
       name: 'Creaton Forum Access',

@@ -8,7 +8,6 @@ export function ProtectedForumBody({
   fundWallet,
   onUnlock,
   unlocking,
-  paymentProtocol = 'mpp',
 }: {
   fundWallet?: {
     did: string | undefined
@@ -19,7 +18,6 @@ export function ProtectedForumBody({
   }
   onUnlock?: () => void
   unlocking?: boolean
-  paymentProtocol?: 'mpp' | 'tempo'
 }) {
   const showFunding =
     fundWallet && needsUsdcFunding(fundWallet.balance, fundWallet.requiredAmount)
@@ -29,11 +27,11 @@ export function ProtectedForumBody({
       {showFunding ? (
         <FundWalletCallout
           balance={fundWallet.balance}
-          description="Pay to unlock charges USDC from your wallet. Add funds with a card, then try again."
+          description="Subscribe with PathUSD from your Tempo wallet. Add funds with a card, then try again."
           did={fundWallet.did}
           onFunded={fundWallet.onFunded}
           requiredAmount={fundWallet.requiredAmount}
-          title="Add USDC to unlock"
+          title="Add PathUSD to unlock"
           walletAddress={fundWallet.walletAddress}
         />
       ) : null}
@@ -50,9 +48,7 @@ export function ProtectedForumBody({
           Member-only post
         </SizableText>
         <SizableText size="$3" opacity={0.8}>
-          {paymentProtocol === 'mpp'
-            ? 'Pay to unlock this board. USDC is charged via MPP when access is confirmed.'
-            : 'Subscribe on the board page, then unlock this post.'}
+          Subscribe on the board page, then unlock this post.
         </SizableText>
         <XStack>
           <Button
@@ -61,7 +57,7 @@ export function ProtectedForumBody({
             disabled={!onUnlock || unlocking || !!showFunding}
             onPress={onUnlock}
           >
-            {unlocking ? 'Unlocking…' : 'Pay to unlock'}
+            {unlocking ? 'Unlocking…' : 'Unlock post'}
           </Button>
         </XStack>
       </YStack>

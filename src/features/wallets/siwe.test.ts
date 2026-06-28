@@ -89,10 +89,10 @@ describe('wallet SIWE helpers', () => {
       address: '0x0000000000000000000000000000000000000001',
       did: 'did:plc:example',
       signature: '0x1234',
-      chainId: 11124,
+      chainId: 42429,
       nonce: '12345678',
       issuedAt: new Date('2026-05-28T00:00:00.000Z'),
-      alsoOn: [11124, 8453],
+      alsoOn: [42429, 8453],
       domain: 'reddwarf.local',
       uri: 'https://reddwarf.local',
     })
@@ -103,7 +103,7 @@ describe('wallet SIWE helpers', () => {
       siwe: {
         domain: 'reddwarf.local',
         address: '0x0000000000000000000000000000000000000001',
-        chainId: 11124,
+        chainId: 42429,
         nonce: '12345678',
         issuedAt: '2026-05-28T00:00:00.000Z',
       },

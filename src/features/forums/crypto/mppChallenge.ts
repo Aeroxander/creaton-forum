@@ -9,16 +9,15 @@ export type MppPaymentRequest = {
   chainId?: number
   methodDetails?: { chainId?: number }
   description?: string
+  periodCount?: string
+  periodUnit?: 'day' | 'week' | 'month'
 }
 
-export type MppMethod = 'abstract' | 'tempo'
-export type MppIntent = 'charge' | 'subscription'
-
-export type MppChallenge = {
+export type TempoMppSubscriptionChallenge = {
   id: string
   realm: string
-  method: MppMethod
-  intent: MppIntent
+  method: 'tempo'
+  intent: 'subscription'
   request: MppPaymentRequest
   description?: string
   digest?: string
@@ -26,33 +25,26 @@ export type MppChallenge = {
   opaque?: Record<string, string>
 }
 
-export type AbstractMppChallenge = MppChallenge & { method: 'abstract'; intent: 'charge' }
-export type TempoMppSubscriptionChallenge = MppChallenge & {
-  method: 'tempo'
-  intent: 'subscription'
-}
-
-export function parseRawMppChallenge(header: string): MppChallenge {
+export function parseTempoMppSubscriptionChallenge(header: string): TempoMppSubscriptionChallenge {
   const payment = extractPaymentParameters(header)
   const parameters = parseAuthParameters(payment)
   const requestValue = parameters.request
   if (!requestValue) throw new Error('MPP challenge omitted its payment request.')
   const request = decodeJson(requestValue) as MppPaymentRequest
-  if (!parameters.id || !parameters.realm || !parameters.method || !parameters.intent) {
-    throw new Error('MPP challenge is missing required authentication parameters.')
-  }
-  if (parameters.method !== 'abstract' && parameters.method !== 'tempo') {
-    throw new Error(`Unsupported MPP method: ${parameters.method}.`)
-  }
-  if (parameters.intent !== 'charge' && parameters.intent !== 'subscription') {
-    throw new Error(`Unsupported MPP intent: ${parameters.intent}.`)
+  if (
+    parameters.method !== 'tempo' ||
+    parameters.intent !== 'subscription' ||
+    !parameters.id ||
+    !parameters.realm
+  ) {
+    throw new Error('Unsupported MPP challenge; expected a Tempo subscription.')
   }
 
   return {
     id: parameters.id,
     realm: parameters.realm,
-    method: parameters.method as MppMethod,
-    intent: parameters.intent as MppIntent,
+    method: 'tempo',
+    intent: 'subscription',
     request,
     ...(parameters.description ? { description: parameters.description } : {}),
     ...(parameters.digest ? { digest: parameters.digest } : {}),
@@ -61,22 +53,6 @@ export function parseRawMppChallenge(header: string): MppChallenge {
       ? { opaque: decodeJson(parameters.opaque) as Record<string, string> }
       : {}),
   }
-}
-
-export function parseAbstractMppChallenge(header: string): AbstractMppChallenge {
-  const challenge = parseRawMppChallenge(header)
-  if (challenge.method !== 'abstract' || challenge.intent !== 'charge') {
-    throw new Error('Unsupported MPP challenge; expected an Abstract charge.')
-  }
-  return challenge
-}
-
-export function parseTempoMppSubscriptionChallenge(header: string): TempoMppSubscriptionChallenge {
-  const challenge = parseRawMppChallenge(header)
-  if (challenge.method !== 'tempo' || challenge.intent !== 'subscription') {
-    throw new Error('Unsupported MPP challenge; expected a Tempo subscription.')
-  }
-  return challenge
 }
 
 export function extractPaymentParameters(header: string): string {

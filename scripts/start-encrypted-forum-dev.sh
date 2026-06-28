@@ -37,11 +37,11 @@ usage() {
 Usage: scripts/start-encrypted-forum-dev.sh [options]
 
 Bootstraps the local encrypted-forum stack:
-  1. starts Anvil (local Abstract-compatible EVM RPC)
-  2. deploys mock CREATE/USDC and KMS contracts to that RPC
+  1. starts Anvil (local EVM RPC for KMS contracts and PathUSD mocks)
+  2. deploys mock CREATE/PathUSD and KMS contracts to that RPC
   3. generates 15 Commonware Golden/P2P operator identities
-  4. registers and attests 15 CREATE-backed operators on Abstract RPC
-  5. starts 15 creaton-kms HTTP/P2P operators (CREATON_KMS_ABSTRACT_RPC_URL)
+  4. registers and attests 15 CREATE-backed operators on the local EVM
+  5. starts 15 creaton-kms HTTP/P2P operators (CREATON_KMS_ABSTRACT_RPC_URL points at Anvil)
   6. runs Golden DKG deal/finalize and approves the committee epoch on-chain
   7. writes AppView and creaton-forum env files
   8. optionally starts dkg-service (dev crypto) and forum-storage sidecar
@@ -211,7 +211,7 @@ mkdir -p "$ARTIFACT_DIR" "$LOG_DIR" "$RUN_DIR"
 echo "== encrypted forum dev bootstrap =="
 echo "dev dir: $DEV_DIR"
 echo "note: Commonware Golden DKG is threshold crypto + operator P2P, not an L2 chain."
-echo "      The EVM chain here is local Anvil (Abstract-compatible RPC for contracts)."
+echo "      The EVM chain here is local Anvil (committee registry and PathUSD mocks)."
 
 anvil_ready() {
   curl --max-time 2 -sf "$RPC_URL" \
@@ -335,7 +335,7 @@ deploy_mock_token_contracts() {
       fi
     fi
   fi
-  echo "[·] Deploying mock CREATE/USDC token contracts to local Abstract RPC (Anvil)"
+  echo "[·] Deploying mock CREATE/PathUSD token contracts to local Anvil"
   echo "      (first forge compile can take several minutes)"
   run_logged "$LOG_DIR/deploy-mock-tokens.log" \
     bash -c "cd \"$CREATON_SC_DIR\" && forge script script/Deploy.s.sol:Deploy \
@@ -629,7 +629,7 @@ FRONTEND_ENV="$DEV_DIR/creaton-forum.env"
 cat > "$APPVIEW_ENV" <<EOF
 FORUM_APPVIEW_PORT=$FORUM_APPVIEW_PORT
 FORUM_DATABASE_URL=$FORUM_DATABASE_URL
-ABSTRACT_RPC_URL=$RPC_URL
+TEMPO_RPC_URL=$RPC_URL
 FORUM_SERVICE_DID=${FORUM_SERVICE_DID:-}
 FORUM_MPP_SECRET=${FORUM_MPP_SECRET:-dev-forum-mpp-secret-at-least-32-bytes}
 FORUM_MPP_SETTLER_PRIVATE_KEY=$DEPLOYER_PK
@@ -644,16 +644,15 @@ cat > "$FRONTEND_ENV" <<EOF
 VITE_CREATON_FORUM_APPVIEW_URL=http://localhost:$FORUM_APPVIEW_PORT
 VITE_FORUM_CRYPTO_MODE=production
 VITE_FORUM_ISSUER_DID=${FORUM_SERVICE_DID:-}
-VITE_ABSTRACT_CHAIN_ID=31337
-VITE_FORUM_USDC_ADDRESS=$MOCK_USDC_ADDRESS
+VITE_TEMPO_CHAIN_ID=${VITE_TEMPO_CHAIN_ID:-42429}
+VITE_TEMPO_PATHUSD_ADDRESS=${VITE_TEMPO_PATHUSD_ADDRESS:-$MOCK_USDC_ADDRESS}
+VITE_TEMPO_BOARD_PAY_TO=${VITE_TEMPO_BOARD_PAY_TO:-$FORUM_POSTER_REWARD_VAULT}
 VITE_FORUM_POSTER_REWARD_VAULT=$FORUM_POSTER_REWARD_VAULT
 VITE_FORUM_REVENUE_ROUTER=$FORUM_REVENUE_ROUTER
 VITE_FORUM_COMMITTEE_REGISTRY=$FORUM_COMMITTEE_REGISTRY
 VITE_FORUM_ENTITLEMENT_REGISTRY=$FORUM_ENTITLEMENT_REGISTRY
 VITE_FORUM_STORAGE_URL=http://localhost:3022
 VITE_DKG_SERVICE_URL=http://localhost:3021
-VITE_TEMPO_CHAIN_ID=${VITE_TEMPO_CHAIN_ID:-42429}
-VITE_TEMPO_PATHUSD_ADDRESS=${VITE_TEMPO_PATHUSD_ADDRESS:-}
 EOF
 
 echo "[✓] Wrote $APPVIEW_ENV"

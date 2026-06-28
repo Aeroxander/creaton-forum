@@ -1,4 +1,3 @@
-import { useAbstractClient } from '@abstract-foundation/agw-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useCallback, useRef } from 'react'
 import { usePublicClient, useWalletClient } from 'wagmi'
@@ -21,7 +20,7 @@ import {
 import { reconstructForumEpochBundle } from '~/features/forums/crypto/forumThresholdAccess'
 import { base64UrlToBytes } from '~/features/forums/crypto/sarmaV2'
 import { isProductionForumCrypto } from '~/features/forums/crypto/forumCryptoMode'
-import { forumBoardAccessQueryKey, cacheForumBoardEntitlement } from '~/features/forums/useForumBoardAccess'
+import { forumBoardAccessQueryKey } from '~/features/forums/useForumBoardAccess'
 import { useForumConfig } from '~/features/forums/useForumQueries'
 import { useAuth } from '~/providers/UnifiedAuthProvider'
 
@@ -40,7 +39,6 @@ type CachedEpochKey = {
 
 export function useForumUnlock(boardUri: string) {
   const { agent } = useAuth()
-  const { data: abstractClient } = useAbstractClient()
   const { data: walletClient } = useWalletClient()
   const publicClient = usePublicClient()
   const { slingshoturl } = useForumConfig()
@@ -54,16 +52,10 @@ export function useForumUnlock(boardUri: string) {
       const cached = epochKeyCache.current.get(cacheKey)
       if (cached) return cached.epochKey
 
-      if (!agent?.did) {
-        throw new Error('Sign in and connect your wallet before unlocking encrypted posts.')
+      if (!agent?.did || !walletClient?.account) {
+        throw new Error('Sign in and connect your Tempo wallet before unlocking encrypted posts.')
       }
-      const isTempo = input.access.paymentProtocol === 'tempo'
-      const account = isTempo
-        ? walletClient?.account?.address
-        : abstractClient?.account.address
-      if (!account) {
-        throw new Error('Sign in and connect your wallet before unlocking encrypted posts.')
-      }
+      const account = walletClient.account.address
 
       const capsuleRecord = await getForumKeyCapsule({
         uri: encrypted.keyCapsuleUri,
@@ -83,23 +75,18 @@ export function useForumUnlock(boardUri: string) {
       if (!session) {
         session = await createSignedForumAccessSession({
           agent,
-          abstractClient: isTempo ? undefined : abstractClient,
-          walletClient: isTempo ? walletClient : undefined,
+          walletClient,
           boardUri: input.boardUri,
           issuerDid: input.access.issuerDid,
           chainId: input.access.chainId,
         })
       }
 
-      const eligibilityBlock = isTempo
-        ? BigInt(await publicClient!.getBlockNumber())
-        : BigInt(await abstractClient!.request({ method: 'eth_blockNumber' }))
+      const eligibilityBlock = BigInt(await publicClient!.getBlockNumber())
 
       const release = await requestForumKeyRelease({
         agent,
-        abstractClient: isTempo ? undefined : abstractClient,
-        walletClient: isTempo ? walletClient : undefined,
-        chainId: input.access.chainId,
+        walletClient,
         issuerEndpoint: input.access.issuerEndpoint,
         issuerDid: input.access.issuerDid,
         boardUri: input.boardUri,
@@ -107,7 +94,6 @@ export function useForumUnlock(boardUri: string) {
         capsules: [{ uri: capsuleRecord.uri, value: capsule }],
         committeeEpoch: capsule.committeeEpoch,
         eligibilityBlock,
-        paymentProtocol: input.access.paymentProtocol,
       })
 
       const combined = await reconstructForumEpochBundle({
@@ -130,7 +116,7 @@ export function useForumUnlock(boardUri: string) {
       })
       return epochKey
     },
-    [abstractClient, agent, publicClient, queryClient, slingshoturl, walletClient],
+    [agent, publicClient, queryClient, slingshoturl, walletClient],
   )
 
   const unlockMutation = useMutation({
@@ -150,17 +136,7 @@ export function useForumUnlock(boardUri: string) {
         },
       })
     },
-    onSuccess: (_plaintext, input) => {
-      if (!agent?.did) return
-      const validFrom = new Date().toISOString()
-      const validUntil = new Date(
-        Date.now() + input.access.durationSeconds * 1000,
-      ).toISOString()
-      cacheForumBoardEntitlement(queryClient, input.boardUri, agent.did, {
-        validFrom,
-        validUntil,
-        paymentRef: null,
-      })
+    onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['__volatile', 'forum-decrypt'] })
     },
   })

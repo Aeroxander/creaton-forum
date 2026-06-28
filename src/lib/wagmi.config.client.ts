@@ -1,4 +1,3 @@
-import { abstractWalletConnector } from '@abstract-foundation/agw-react/connectors'
 import { createConfig, http } from 'wagmi'
 import { injected } from 'wagmi/connectors'
 
@@ -22,7 +21,7 @@ export { tempoMainnet, tempoTestnet }
 
 export const wagmiConfig = createConfig({
   chains: [defaultChain, ...otherChains],
-  connectors: [injected(), abstractWalletConnector()],
+  connectors: [injected()],
   transports: Object.fromEntries(
     walletChains.map((chain) => [chain.id, http()]),
   ),

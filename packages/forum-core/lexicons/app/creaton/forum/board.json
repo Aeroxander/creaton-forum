@@ -131,23 +131,23 @@
         },
         "paymentProtocol": {
           "type": "string",
-          "knownValues": ["mpp", "tempo"],
-          "description": "MPP charge is used for community boards. tempo subscription is used for creator board Patreon-style support."
+          "knownValues": ["tempo"],
+          "description": "Tempo MPP subscription used for all protected boards."
         },
         "chainId": {
           "type": "integer",
-          "minimum": 2741,
-          "description": "Abstract mainnet (2741), Abstract testnet (11124), Tempo mainnet (4217), or Tempo testnet (42429)."
+          "knownValues": [4217, 42429],
+          "description": "Tempo mainnet (4217) or Tempo testnet (42429)."
         },
         "asset": {
           "type": "string",
           "maxLength": 42,
-          "description": "Abstract USDC contract address."
+          "description": "PathUSD contract address on Tempo."
         },
         "amount": {
           "type": "string",
           "maxLength": 78,
-          "description": "Human-readable USDC.e amount used by the Abstract MPP charge method."
+          "description": "PathUSD subscription amount in atomic base-10 units."
         },
         "durationSeconds": {
           "type": "integer",
@@ -161,17 +161,17 @@
         "revenueRouter": {
           "type": "string",
           "maxLength": 42,
-          "description": "Abstract router that allocates 90% to payTo and 10% to the KMS reward vault."
+          "description": "EVM router that allocates board revenue and KMS operator rewards."
         },
         "committeeRegistry": {
           "type": "string",
           "maxLength": 42,
-          "description": "Abstract CREATE delegated-PoS committee registry."
+          "description": "CREATE delegated-PoS committee registry."
         },
         "entitlementRegistry": {
           "type": "string",
           "maxLength": 42,
-          "description": "Abstract protected-board entitlement registry."
+          "description": "Protected-board entitlement registry."
         },
         "committeeSize": {
           "type": "integer",
